@@ -1,0 +1,26 @@
+{
+  "name": "Нутри AI",
+  "short_name": "НутриAI",
+  "description": "Персональный трекер питания с AI",
+  "start_url": "/nutri-ai/",
+  "scope": "/nutri-ai/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
+  "orientation": "portrait",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
