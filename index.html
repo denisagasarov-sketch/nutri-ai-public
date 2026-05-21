@@ -292,6 +292,7 @@ input::placeholder{color:var(--muted)}
         <div class="pm-box"><input type="number" id="pcFat"  class="pm-input" style="color:#ffecd2"><div class="l">жиры</div></div>
         <div class="pm-box"><input type="number" id="pcCarb" class="pm-input" style="color:var(--balance)"><div class="l">углев</div></div>
       </div>
+      <div id="pcConfidence" style="display:none;font-size:13px;color:var(--kcal);margin:6px 0 2px"></div>
       <div class="row">
         <button class="btn btn-ghost" style="flex:1" onclick="dismissPhotoCard()">Отмена</button>
         <button class="btn" style="flex:1" onclick="confirmPhotoCard()">Добавить</button>
@@ -824,6 +825,16 @@ const FOOD_VISION_PROMPT = `Прочитай этикетку на фото. В�
 {"name":"название продукта на русском","kcal_per_serving":число,"prot_per_serving":число,"fat_per_serving":число,"carb_per_serving":число,"serving_g":число}
 Переписывай цифры точно как на этикетке, без округлений и пересчётов.`;
 
+const DETECT_PHOTO_PROMPT = `На фото этикетка продукта или готовое блюдо/еда?
+Верни ТОЛЬКО JSON: {"type":"label"} или {"type":"food"}`;
+
+const DISH_VISION_PROMPT = `На фото готовое блюдо или продукт питания.
+Определи что это, оцени вес порции визуально по размеру тарелки/посуды.
+Верни ТОЛЬКО JSON:
+{"name":"название блюда на русском","weight":число_граммов,"kcal":число,"prot":число,"fat":число,"carb":число,"cleanliness":"clean|snack|junk","confidence":"high|medium|low"}
+Все значения — итоговые для всей порции, не на 100г.
+Если confidence=low — значит вес определён приблизительно.`;
+
 // ═══════════════════════════════════════════
 //  PRESET & STATE
 // ═══════════════════════════════════════════
@@ -1310,29 +1321,53 @@ async function handleFoodPhoto(e) {
   const btn = document.getElementById('camBtn');
   const sta = document.getElementById('addStatus');
   btn.disabled = true; btn.textContent = '⏳';
-  sta.textContent = 'Анализирую фото…';
+  sta.textContent = 'Определяю тип фото…';
 
   try {
     const { base64, mimeType } = await fileToBase64(file);
-    const raw = await callVision(base64, mimeType, FOOD_VISION_PROMPT);
+
+    const detected = await callVision(base64, mimeType, DETECT_PHOTO_PROMPT);
     let data, warn = '';
-    if (!raw.serving_g || raw.serving_g <= 0) {
+
+    if (detected.type === 'food') {
+      sta.textContent = 'Анализирую блюдо…';
+      const raw = await callVision(base64, mimeType, DISH_VISION_PROMPT);
       data = {
-        type: 'label', name: raw.name, serving_g: null,
-        kcal: raw.kcal_per_serving, prot: raw.prot_per_serving,
-        fat:  raw.fat_per_serving,  carb: raw.carb_per_serving,
+        type: 'food',
+        name: raw.name,
+        weight: raw.weight || 100,
+        kcal: raw.kcal,
+        prot: raw.prot,
+        fat:  raw.fat,
+        carb: raw.carb,
+        cleanliness: raw.cleanliness || 'clean',
+        confidence: raw.confidence || 'medium',
       };
-      warn = '⚠️ Размер порции не найден — введи вес порции вручную';
+      if (data.confidence === 'low') {
+        warn = '⚠️ Вес определён приблизительно, уточни';
+      }
     } else {
-      const f = 100 / raw.serving_g;
-      data = {
-        type: 'label', name: raw.name, serving_g: raw.serving_g,
-        kcal: Math.round(raw.kcal_per_serving * f),
-        prot: Math.round(raw.prot_per_serving * f * 10) / 10,
-        fat:  Math.round(raw.fat_per_serving  * f * 10) / 10,
-        carb: Math.round(raw.carb_per_serving * f * 10) / 10,
-      };
+      sta.textContent = 'Читаю этикетку…';
+      const raw = await callVision(base64, mimeType, FOOD_VISION_PROMPT);
+      if (!raw.serving_g || raw.serving_g <= 0) {
+        data = {
+          type: 'label', name: raw.name, serving_g: null,
+          kcal: raw.kcal_per_serving, prot: raw.prot_per_serving,
+          fat:  raw.fat_per_serving,  carb: raw.carb_per_serving,
+        };
+        warn = '⚠️ Размер порции не найден — введи вес порции вручную';
+      } else {
+        const f = 100 / raw.serving_g;
+        data = {
+          type: 'label', name: raw.name, serving_g: raw.serving_g,
+          kcal: Math.round(raw.kcal_per_serving * f),
+          prot: Math.round(raw.prot_per_serving * f * 10) / 10,
+          fat:  Math.round(raw.fat_per_serving  * f * 10) / 10,
+          carb: Math.round(raw.carb_per_serving * f * 10) / 10,
+        };
+      }
     }
+
     _photoData = data;
     showPhotoCard(data);
     sta.textContent = warn;
@@ -1358,6 +1393,7 @@ function showPhotoCard(data) {
   document.getElementById('pcName').value = data.name;
   const badge = document.getElementById('pcBadge');
   const lbl = document.getElementById('pcWeightLabel');
+  const conf = document.getElementById('pcConfidence');
   if (data.type === 'label') {
     badge.className = 'badge clean';
     badge.textContent = 'этикетка';
@@ -1365,12 +1401,19 @@ function showPhotoCard(data) {
     const g = data.serving_g || null;
     document.getElementById('pcWeight').value = g || '';
     renderPhotoMacros(g ? scaleFromPer100(data, g) : data);
+    conf.style.display = 'none';
   } else {
     badge.className = 'badge ' + (data.cleanliness || 'clean');
     badge.textContent = clLbl(data.cleanliness);
     lbl.textContent = 'Вес:';
     document.getElementById('pcWeight').value = data.weight || 100;
     renderPhotoMacros(data);
+    if (data.confidence === 'low') {
+      conf.textContent = '⚠️ Вес определён приблизительно, уточни';
+      conf.style.display = 'block';
+    } else {
+      conf.style.display = 'none';
+    }
   }
   document.getElementById('photoCard').style.display = 'block';
   document.getElementById('photoCard').scrollIntoView({behavior:'smooth', block:'nearest'});
