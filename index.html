@@ -686,24 +686,29 @@ input::placeholder{color:var(--muted)}
       <label>Алиасы</label>
       <input type="text" id="ufAliases" placeholder="через запятую: арах паста, арахпаста">
     </div>
-    <div class="modal-grid" style="margin-bottom:10px">
+    <div class="modal-field" style="margin-bottom:10px">
+      <label>Количество (г или мл)</label>
+      <input type="number" id="ufQty" min="1" max="9999" placeholder="например 100, 325, 30" oninput="ufRecalc()">
+    </div>
+    <div class="modal-grid" style="margin-bottom:6px">
       <div class="modal-field">
-        <label>Ккал на 100г</label>
-        <input type="number" id="ufKcal" min="0" max="1000">
+        <label>Ккал</label>
+        <input type="number" id="ufKcal" min="0" max="99999" step="0.1" oninput="ufRecalc()">
       </div>
       <div class="modal-field">
-        <label>Белок на 100г</label>
-        <input type="number" id="ufProt" min="0" max="100" step="0.1">
+        <label>Белок</label>
+        <input type="number" id="ufProt" min="0" max="9999" step="0.1" oninput="ufRecalc()">
       </div>
       <div class="modal-field">
-        <label>Жиры на 100г</label>
-        <input type="number" id="ufFat" min="0" max="100" step="0.1">
+        <label>Жиры</label>
+        <input type="number" id="ufFat" min="0" max="9999" step="0.1" oninput="ufRecalc()">
       </div>
       <div class="modal-field">
-        <label>Углев на 100г</label>
-        <input type="number" id="ufCarb" min="0" max="300" step="0.1">
+        <label>Углев</label>
+        <input type="number" id="ufCarb" min="0" max="9999" step="0.1" oninput="ufRecalc()">
       </div>
     </div>
+    <div id="ufPer100" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
     <div style="margin-bottom:14px">
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Тип</div>
       <div style="display:flex;gap:8px">
@@ -1608,12 +1613,26 @@ function openUserFoodModal(idx) {
   document.getElementById('ufModalTitle').textContent = f ? 'Редактировать продукт' : 'Новый продукт';
   document.getElementById('ufName').value    = f ? f.name : '';
   document.getElementById('ufAliases').value = f ? (f.aliases||[]).join(', ') : '';
+  document.getElementById('ufQty').value     = 100;
   document.getElementById('ufKcal').value    = f ? f.kcal : '';
   document.getElementById('ufProt').value    = f ? f.prot : '';
   document.getElementById('ufFat').value     = f ? f.fat  : '';
   document.getElementById('ufCarb').value    = f ? f.carb : '';
+  document.getElementById('ufPer100').textContent = '';
   setUfType(f ? (f.cleanliness||'clean') : 'clean');
   document.getElementById('userFoodModal').style.display = 'flex';
+}
+
+function ufRecalc() {
+  const qty  = parseFloat(document.getElementById('ufQty').value)  || 0;
+  const kcal = parseFloat(document.getElementById('ufKcal').value) || 0;
+  const prot = parseFloat(document.getElementById('ufProt').value) || 0;
+  const fat  = parseFloat(document.getElementById('ufFat').value)  || 0;
+  const carb = parseFloat(document.getElementById('ufCarb').value) || 0;
+  const el   = document.getElementById('ufPer100');
+  if (!qty || qty === 100) { el.textContent = ''; return; }
+  const f = 100 / qty;
+  el.textContent = `На 100г: ${Math.round(kcal*f*10)/10} ккал · Б${Math.round(prot*f*10)/10} · Ж${Math.round(fat*f*10)/10} · У${Math.round(carb*f*10)/10}`;
 }
 
 function closeUserFoodModal() {
@@ -1631,10 +1650,16 @@ function saveUserFood() {
   if (!name) { toast('Введи название'); return; }
   const aliasRaw = document.getElementById('ufAliases').value.trim();
   const aliases  = aliasRaw ? aliasRaw.split(',').map(a => a.trim().toLowerCase()).filter(Boolean) : [name.toLowerCase()];
-  const kcal = parseFloat(document.getElementById('ufKcal').value) || 0;
-  const prot = parseFloat(document.getElementById('ufProt').value) || 0;
-  const fat  = parseFloat(document.getElementById('ufFat').value)  || 0;
-  const carb = parseFloat(document.getElementById('ufCarb').value) || 0;
+  const qty     = parseFloat(document.getElementById('ufQty').value)  || 100;
+  const kcalRaw = parseFloat(document.getElementById('ufKcal').value) || 0;
+  const protRaw = parseFloat(document.getElementById('ufProt').value) || 0;
+  const fatRaw  = parseFloat(document.getElementById('ufFat').value)  || 0;
+  const carbRaw = parseFloat(document.getElementById('ufCarb').value) || 0;
+  const factor = 100 / qty;
+  const kcal = Math.round(kcalRaw * factor * 10) / 10;
+  const prot = Math.round(protRaw * factor * 10) / 10;
+  const fat  = Math.round(fatRaw  * factor * 10) / 10;
+  const carb = Math.round(carbRaw * factor * 10) / 10;
   const cleanliness = document.getElementById('userFoodModal').dataset.type || 'clean';
   const entry = { name, aliases, kcal, prot, fat, carb, cleanliness, savedAt: new Date().toISOString() };
   const uFoods = lsGet('userFoods', []);
