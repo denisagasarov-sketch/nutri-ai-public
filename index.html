@@ -207,6 +207,8 @@ input::placeholder{color:var(--muted)}
 
 /* ── History chart ── */
 #scoreChart{display:block}
+#chartWrapper{scrollbar-width:none}
+#chartWrapper::-webkit-scrollbar{display:none}
 
 /* ── Day view nav & animation ── */
 .ds-nav-btn{background:none;border:none;font-size:26px;line-height:1;padding:4px 10px;cursor:pointer;color:var(--text);transition:color .15s;flex-shrink:0}
@@ -436,10 +438,24 @@ input::placeholder{color:var(--muted)}
   <section class="sec" id="sec-history">
     <div id="statsCard"></div>
     <div class="card">
-      <p style="font-size:11px;font-weight:500;color:var(--muted,#888);margin:0 0 12px;letter-spacing:0.05em;text-transform:uppercase">Динамика баллов и темп похудения</p>
-      <div id="chartLegend" style="display:flex;gap:12px;font-size:11px;color:var(--muted,#888);margin-bottom:10px;flex-wrap:wrap;align-items:center"></div>
-      <div id="chartWrapper" style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
-        <canvas id="scoreChart" role="img" aria-label="График баллов питания, дня и темпа изменения веса"></canvas>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+        <span style="display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted,#888)"><span style="width:16px;height:3px;background:#185FA5;display:inline-block;border-radius:2px"></span>Питание /100</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted,#888)"><span style="width:16px;height:3px;background:#a78bfa;display:inline-block;border-radius:2px"></span>День /115</span>
+      </div>
+      <div id="chartOuter" style="position:relative">
+        <div id="chartTip" style="position:absolute;top:8px;background:rgba(15,15,26,0.95);border:0.5px solid #444;border-radius:8px;padding:8px 12px;font-size:13px;color:#fff;pointer-events:none;display:none;z-index:10;white-space:nowrap">
+          <div id="tipTitle" style="font-weight:500;margin-bottom:6px;color:#ccc;font-size:13px"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="width:8px;height:8px;border-radius:2px;background:#185FA5;flex-shrink:0"></span><span id="tipPit"></span></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="width:8px;height:8px;border-radius:2px;background:#a78bfa;flex-shrink:0"></span><span id="tipDay"></span></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span id="tipTempDot" style="width:8px;height:8px;border-radius:2px;flex-shrink:0"></span><span id="tipTemp"></span></div>
+        </div>
+        <div style="display:flex;width:100%">
+          <canvas id="chartAxisLeft" style="flex-shrink:0;width:44px"></canvas>
+          <div id="chartWrapper" style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:hidden">
+            <canvas id="scoreChart" role="img" aria-label="График баллов питания, дня и темпа"></canvas>
+          </div>
+          <canvas id="chartAxisRight" style="flex-shrink:0;width:54px"></canvas>
+        </div>
       </div>
     </div>
 
@@ -778,7 +794,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.3.9';
+const VERSION = '1.4.0';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -1924,20 +1940,21 @@ function calcKgPerMonth(h) {
   return Math.round((-deficit) * 30 / 7700 * 10) / 10;
 }
 
-function renderChartLegend() {
-  const goal = lsGet('profile', {}).goal || 'loss';
-  const greenLabel = goal === 'gain' ? 'Набор (цель)' : 'Похудение';
-  const redLabel   = goal === 'gain' ? 'Дефицит'      : 'Набор';
-  document.getElementById('chartLegend').innerHTML = `
-    <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:2.5px;background:#185FA5;display:inline-block;border-radius:1px"></span>Питание /100</span>
-    <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:2.5px;background:#a78bfa;display:inline-block;border-radius:1px"></span>День /115</span>
-    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#1D9E75;border-radius:2px;display:inline-block"></span>${greenLabel}</span>
-    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#E24B4A;border-radius:2px;display:inline-block"></span>${redLabel}</span>`;
-}
-
 function renderChart() {
+  ['_chartMain','_chartLeft','_chartRight'].forEach(k => {
+    if (window[k]) { window[k].destroy(); window[k] = null; }
+  });
+  if (window._nutriChart) { window._nutriChart.destroy(); window._nutriChart = null; }
   if (!history.length) return;
-  const goal = lsGet('profile', {}).goal || 'loss';
+
+  const goal   = lsGet('profile', {}).goal || 'loss';
+  const dpr    = window.devicePixelRatio || 1;
+  const H      = window.innerWidth > window.innerHeight
+    ? Math.min(300, window.innerHeight * 0.55) : 220;
+  const FONT   = 14;
+  const perDay = 40;
+  const wrapper = document.getElementById('chartWrapper');
+  const mainW  = Math.max(wrapper ? (wrapper.clientWidth || 300) : 300, history.length * perDay);
 
   const labels  = history.map(h => {
     const d = new Date(h.date);
@@ -1945,139 +1962,137 @@ function renderChart() {
   });
   const питание = history.map(h => { const s = getScoresForDay(h); return s.total || 0; });
   const день    = history.map(h => { const s = getScoresForDay(h); return s.dayTotal || s.total || 0; });
-  const kgData  = history.map(h => calcKgPerMonth(h));
+  const темп    = history.map(h => calcKgPerMonth(h));
 
-  function barColor(v) {
-    if (goal === 'loss')     return v <= 0 ? '#1D9E75' : '#E24B4A';
-    if (goal === 'gain')     return v >= 0 ? '#1D9E75' : '#E24B4A';
-    return Math.abs(v) <= 0.3 ? '#1D9E75' : '#E24B4A';
+  function bc(v) {
+    if (goal === 'gain') return v >= 0 ? '#1D9E75' : '#E24B4A';
+    return v <= 0 ? '#1D9E75' : '#E24B4A';
   }
 
-  const dpr        = window.devicePixelRatio || 1;
-  const perDay     = 55;
-  const wrapper    = document.getElementById('chartWrapper');
-  const minWidth   = wrapper ? (wrapper.clientWidth || 320) : 320;
-  const chartWidth = Math.max(minWidth, history.length * perDay);
-  const chartHeight = window.innerWidth > window.innerHeight
-    ? Math.min(320, window.innerHeight * 0.6) : 240;
+  // Левая ось
+  const lc = document.getElementById('chartAxisLeft');
+  lc.width = 44 * dpr; lc.height = H * dpr; lc.style.height = H + 'px';
+  window._chartLeft = new Chart(lc, {
+    type: 'bar',
+    data: { labels: [''], datasets: [{ data: [0], yAxisID: 'y', backgroundColor: 'transparent' }] },
+    options: {
+      responsive: false, devicePixelRatio: dpr,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      layout: { padding: { bottom: 28 } },
+      scales: {
+        x: { display: false },
+        y: { min: 0, max: 115, position: 'left',
+          ticks: { font: { size: FONT }, color: '#888', stepSize: 25, maxTicksLimit: 6 },
+          grid: { display: false }, border: { display: false } }
+      }
+    }
+  });
 
-  const canvas = document.getElementById('scoreChart');
-  canvas.width  = chartWidth  * dpr;
-  canvas.height = chartHeight * dpr;
-  canvas.style.width  = chartWidth  + 'px';
-  canvas.style.height = chartHeight + 'px';
+  // Правая ось
+  const rc = document.getElementById('chartAxisRight');
+  rc.width = 54 * dpr; rc.height = H * dpr; rc.style.height = H + 'px';
+  window._chartRight = new Chart(rc, {
+    type: 'bar',
+    data: { labels: [''], datasets: [{ data: [0], yAxisID: 'y2', backgroundColor: 'transparent' }] },
+    options: {
+      responsive: false, devicePixelRatio: dpr,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      layout: { padding: { bottom: 28 } },
+      scales: {
+        x: { display: false },
+        y2: { min: -2, max: 2, position: 'right',
+          grid: { display: false },
+          ticks: { font: { size: FONT }, color: '#888',
+            callback: v => v === 0 ? '0' : (v > 0 ? '+' : '') + v.toFixed(1) + 'кг' },
+          border: { display: false } }
+      }
+    }
+  });
 
-  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
-  Chart.defaults.font.size   = 11;
-
-  if (window._nutriChart) { window._nutriChart.destroy(); window._nutriChart = null; }
-
-  window._nutriChart = new Chart(canvas, {
+  // Основной график
+  const mc = document.getElementById('scoreChart');
+  mc.width = mainW * dpr; mc.height = H * dpr;
+  mc.style.width = mainW + 'px'; mc.style.height = H + 'px';
+  window._chartMain = new Chart(mc, {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        {
-          label: 'Темп кг/мес',
-          data: kgData,
-          backgroundColor: kgData.map(v => barColor(v) + 'CC'),
-          borderColor:     kgData.map(v => barColor(v)),
-          borderWidth: 1,
-          borderRadius: 3,
-          order: 3,
-          yAxisID: 'y2'
-        },
-        {
-          label: 'Питание',
-          data: питание,
-          type: 'line',
-          borderColor: '#185FA5',
-          backgroundColor: 'transparent',
-          borderWidth: 2.5,
-          pointBackgroundColor: '#185FA5',
-          pointBorderColor: '#185FA5',
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          tension: 0.4,
-          order: 1,
-          yAxisID: 'y'
-        },
-        {
-          label: 'День',
-          data: день,
-          type: 'line',
-          borderColor: '#a78bfa',
-          backgroundColor: 'transparent',
-          borderWidth: 2.5,
-          pointBackgroundColor: '#a78bfa',
-          pointBorderColor: '#a78bfa',
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          tension: 0.4,
-          order: 2,
-          yAxisID: 'y'
-        }
+        { label: 'Темп', data: темп,
+          backgroundColor: темп.map(v => bc(v) + 'BB'),
+          borderColor: темп.map(v => bc(v)),
+          borderWidth: 1, borderRadius: 3, order: 3, yAxisID: 'y2' },
+        { label: 'Питание', data: питание, type: 'line',
+          borderColor: '#185FA5', backgroundColor: 'transparent',
+          borderWidth: 2.5, pointBackgroundColor: '#185FA5',
+          pointRadius: 3, pointHoverRadius: 5, tension: 0.4, order: 1, yAxisID: 'y' },
+        { label: 'День', data: день, type: 'line',
+          borderColor: '#a78bfa', backgroundColor: 'transparent',
+          borderWidth: 2.5, pointBackgroundColor: '#a78bfa',
+          pointRadius: 3, pointHoverRadius: 5, tension: 0.4, order: 2, yAxisID: 'y' }
       ]
     },
     options: {
-      responsive: false,
-      devicePixelRatio: dpr,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          displayColors: true,
-          backgroundColor: '#1a1a2e',
-          borderColor: '#2a2a4a',
-          borderWidth: 1,
-          titleColor: '#e0e0ff',
-          bodyColor: '#a0a0cc',
-          callbacks: {
-            title: (items) => items[0]?.label || '',
-            label: (ctx) => {
-              if (ctx.dataset.yAxisID === 'y2') {
-                const v = ctx.parsed.y;
-                return (v <= 0 ? '↓ ' : '↑ +') + Math.abs(v).toFixed(1) + ' кг/мес';
-              }
-              if (ctx.dataset.label === 'Питание') return 'Питание: ' + ctx.parsed.y + ' пт';
-              return 'День: ' + ctx.parsed.y + ' пт';
-            }
-          }
-        }
-      },
+      responsive: false, devicePixelRatio: dpr,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
       scales: {
-        y: {
-          min: 0, max: 115,
-          position: 'left',
-          ticks: { font: { size: 11 }, stepSize: 25, color: '#888' },
-          grid: { color: 'rgba(128,128,128,0.12)' },
-          title: { display: true, text: 'Баллы', color: '#888', font: { size: 10 } }
-        },
-        y2: {
-          min: -2, max: 2,
-          position: 'right',
-          grid: {
-            display: true,
-            color: (ctx) => ctx.tick.value === 0 ? 'rgba(255,255,255,0.4)' : 'transparent',
-            lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 0
-          },
-          ticks: {
-            font: { size: 11 }, color: '#888',
-            callback: v => v === 0 ? '0' : (v > 0 ? '+' : '') + v.toFixed(1) + ' кг'
-          },
-          title: { display: true, text: 'кг/мес', color: '#888', font: { size: 10 } }
-        },
-        x: {
-          ticks: { font: { size: 10 }, color: '#888', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
-          grid: { display: false }
-        }
+        y: { display: true, min: 0, max: 115,
+          grid: { display: false }, ticks: { display: false }, border: { display: false } },
+        y2: { display: true, min: -2, max: 2, position: 'right',
+          grid: { display: true,
+            color: ctx => ctx.tick.value === 0 ? 'rgba(255,255,255,0.4)' : 'transparent',
+            lineWidth: ctx => ctx.tick.value === 0 ? 2 : 0 },
+          ticks: { display: false }, border: { display: false } },
+        x: { ticks: { font: { size: FONT }, color: '#888', maxRotation: 0 },
+          grid: { display: false }, border: { display: false } }
       }
     }
   });
 
   setTimeout(() => { if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth; }, 150);
-  renderChartLegend();
+
+  // Кастомный тултип (closure над labels/питание/день/темп/perDay/goal/bc)
+  function initChartTooltip() {
+    const tip = document.getElementById('chartTip');
+    const tipTitle = document.getElementById('tipTitle');
+    const tipPit = document.getElementById('tipPit');
+    const tipDay_ = document.getElementById('tipDay');
+    const tipTemp = document.getElementById('tipTemp');
+    const tipTempDot = document.getElementById('tipTempDot');
+    const outer = document.getElementById('chartOuter');
+    if (!mc || !wrapper || !tip) return;
+
+    function show(clientX, clientY) {
+      const r = wrapper.getBoundingClientRect();
+      const x = (clientX - r.left) + wrapper.scrollLeft;
+      const idx = Math.max(0, Math.min(labels.length - 1, Math.floor(x / perDay)));
+      const kgVal = темп[idx];
+      const color = bc(kgVal);
+      const kgStr = (kgVal <= 0 ? '↓ ' : '↑ +') + Math.abs(kgVal).toFixed(1) + ' кг/мес';
+      tipTitle.textContent = labels[idx];
+      tipPit.textContent = 'Питание: ' + питание[idx] + ' пт';
+      tipDay_.textContent = 'День: ' + день[idx] + ' пт';
+      tipTemp.textContent = 'Темп: ' + kgStr;
+      tipTempDot.style.background = color;
+      tip.style.display = 'block';
+      const or = outer.getBoundingClientRect();
+      let left = clientX - or.left + 8;
+      if (left + 150 > or.width) left = clientX - or.left - 158;
+      tip.style.left = Math.max(4, left) + 'px';
+    }
+
+    function hide() { tip.style.display = 'none'; }
+
+    mc.addEventListener('mousemove', e => show(e.clientX, e.clientY));
+    mc.addEventListener('mouseleave', hide);
+    mc.addEventListener('touchstart', e => {
+      e.preventDefault();
+      show(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    mc.addEventListener('touchend', () => setTimeout(hide, 1500));
+  }
+
+  initChartTooltip();
 }
 
 if (!window._chartResizeAttached) {
