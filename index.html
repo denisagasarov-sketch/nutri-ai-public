@@ -252,6 +252,15 @@ input::placeholder{color:var(--muted)}
 .stats-value{font-size:22px;font-weight:600;word-break:break-all}
 .stats-label{font-size:11px;color:var(--muted);margin-top:2px}
 .stats-best{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;padding-top:8px;border-top:.5px solid var(--border)}
+/* ── Profile card + edit sheet ── */
+#profileCard{background:var(--bg);border-radius:var(--radius);padding:14px 16px;cursor:pointer;border:1px solid var(--border)}
+#profileCard:active{filter:brightness(0.92)}
+.profile-main{font-size:15px;font-weight:700;margin-bottom:4px}
+.profile-goal{font-size:13px;color:var(--muted);margin-bottom:3px}
+.profile-targets{font-size:13px;margin-bottom:4px}
+.profile-edit-hint{font-size:11px;color:var(--muted)}
+#profileEditSheet{position:fixed;bottom:0;left:0;right:0;max-height:88vh;overflow-y:auto;background:var(--card);border-radius:16px 16px 0 0;padding:20px 16px 40px;z-index:200;transform:translateY(100%);transition:transform .3s ease}
+.recalc-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:14px 0 4px;cursor:pointer}
 /* ── Help bottom sheet ── */
 #helpSheet{position:fixed;bottom:0;left:0;right:0;max-height:80vh;overflow-y:auto;background:var(--card);border-radius:16px 16px 0 0;padding:20px 16px;z-index:200;transform:translateY(100%);transition:transform .3s ease}
 #helpSheet h3{font-size:14px;color:#a78bfa;margin:16px 0 6px}
@@ -489,130 +498,10 @@ input::placeholder{color:var(--muted)}
       <button onclick="openHelp()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px;line-height:1">❓</button>
     </div>
 
-    <!-- Profile form -->
+    <!-- Profile card -->
     <div class="card">
       <div class="card-ttl">Профиль</div>
-
-      <!-- Gender -->
-      <div class="pf-row">
-        <div class="pf-lbl">Пол</div>
-        <div class="gender-tabs">
-          <button class="gender-tab active" id="pfGenderMale"   onclick="setGender('male','pf')">♂ Мужчина</button>
-          <button class="gender-tab"        id="pfGenderFemale" onclick="setGender('female','pf')">♀ Женщина</button>
-        </div>
-      </div>
-
-      <!-- Age + Weight -->
-      <div class="pf-2col">
-        <div>
-          <label class="pf-sublbl">Возраст</label>
-          <input type="number" id="pf-age" min="10" max="100" placeholder="лет" oninput="onProfileChange('pf')">
-        </div>
-        <div>
-          <label class="pf-sublbl">Вес (кг)</label>
-          <input type="number" id="pf-weight" min="30" max="250" placeholder="кг" oninput="onProfileChange('pf')">
-        </div>
-      </div>
-
-      <!-- Height -->
-      <div class="pf-row">
-        <label class="pf-sublbl">Рост (см)</label>
-        <input type="number" id="pf-height" min="100" max="250" placeholder="см" oninput="onProfileChange('pf')">
-      </div>
-
-      <!-- Activity -->
-      <div class="pf-row">
-        <div class="pf-lbl">
-          Уровень активности
-          <span class="help-wrap">
-            <button class="help-btn" onclick="toggleActivityHelp(event,'pfHelp')">?</button>
-            <div class="help-popup" id="pfHelp">
-              <strong style="font-size:12px">Уровни активности</strong>
-              <table class="help-tbl" style="margin-top:6px">
-                <thead><tr><th>Уровень</th><th>Шагов/день</th><th>Коэф.</th></tr></thead>
-                <tbody>
-                  <tr><td>Минимальный</td><td>&lt;3 000</td><td>×1.2</td></tr>
-                  <tr><td>Низкий</td><td>3 000–7 000</td><td>×1.375</td></tr>
-                  <tr><td>Средний</td><td>7 000–12 000</td><td>×1.55</td></tr>
-                  <tr><td>Высокий</td><td>12 000+</td><td>×1.725</td></tr>
-                </tbody>
-              </table>
-              <table class="help-tbl">
-                <thead><tr><th>Уровень</th><th>км/день</th><th>Доп. ккал</th></tr></thead>
-                <tbody>
-                  <tr><td>Минимальный</td><td>~1–2 км</td><td>~100–150</td></tr>
-                  <tr><td>Низкий</td><td>~3–5 км</td><td>~200–330</td></tr>
-                  <tr><td>Средний</td><td>~7–10 км</td><td>~450–650</td></tr>
-                  <tr><td>Высокий</td><td>~12–15 км</td><td>~780–1000</td></tr>
-                </tbody>
-              </table>
-              <div style="margin-top:8px;color:var(--muted);line-height:1.6">
-                При весе ~80кг за день:<br>
-                · 1–2 км прогулка → 70–140 ккал<br>
-                · 30 мин ходьбы (~3 км) → 200 ккал<br>
-                · 7 000 шагов (~5 км) → 330 ккал<br>
-                · 10 000 шагов (~7 км) → 470 ккал<br>
-                · 1 час в зале → 400–600 ккал<br><br>
-                Типичный день:<br>
-                · Дома, почти не выхожу → Минимальный<br>
-                · Офис + вечерняя прогулка → Низкий<br>
-                · Ходьба + спорт 3×/нед → Средний<br>
-                · Тренировки каждый день → Высокий
-              </div>
-            </div>
-          </span>
-        </div>
-        <select class="pf-select" id="pf-act" onchange="onProfileChange('pf')">
-          <option value="1.2">Минимальный (&lt;3 000 шагов/день)</option>
-          <option value="1.375" selected>Низкий (3 000–7 000 шагов/день)</option>
-          <option value="1.55">Средний (7 000–12 000 шагов/день)</option>
-          <option value="1.725">Высокий (12 000+ шагов/день)</option>
-        </select>
-      </div>
-
-      <!-- Goal -->
-      <div class="pf-row">
-        <label class="pf-sublbl">Цель</label>
-        <select class="pf-select" id="pf-goal" onchange="onGoalChange('pf')">
-          <option value="loss">Похудение</option>
-          <option value="maintain">Поддержание</option>
-          <option value="gain">Набор мышц</option>
-        </select>
-      </div>
-
-      <!-- Mode (hidden when maintain) -->
-      <div class="pf-row" id="pf-mode-row">
-        <label class="pf-sublbl">Режим</label>
-        <select class="pf-select" id="pf-mode" onchange="onProfileChange('pf')">
-          <option value="mild">Мягкий</option>
-          <option value="moderate" selected>Умеренный</option>
-          <option value="intense">Интенсивный</option>
-        </select>
-      </div>
-
-      <!-- TDEE preview -->
-      <div class="tdee-info" id="pf-tdee-info"></div>
-
-      <!-- Editable КБЖУ targets -->
-      <div class="targets-grid">
-        <div class="tg-box"><span class="tg-lbl" style="color:var(--kcal)">Ккал</span><input type="number" class="tg-input" id="pf-kcal" min="1000" max="5000"></div>
-        <div class="tg-box"><span class="tg-lbl" style="color:var(--prot)">Белок</span><input type="number" class="tg-input" id="pf-prot" min="50" max="400"></div>
-        <div class="tg-box"><span class="tg-lbl">Жиры</span><input type="number" class="tg-input" id="pf-fat" min="20" max="300"></div>
-        <div class="tg-box"><span class="tg-lbl" style="color:var(--balance)">Углев</span><input type="number" class="tg-input" id="pf-carb" min="0" max="600"></div>
-      </div>
-
-      <div class="div"></div>
-
-      <!-- Activity toggle -->
-      <div class="toggle-row">
-        <span class="toggle-lbl">Учитывать активность (Garmin)</span>
-        <label class="toggle">
-          <input type="checkbox" id="pf-track-act" checked>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <button class="btn btn-full" style="margin-top:14px" onclick="saveProfile()">Сохранить профиль</button>
+      <div id="profileCard"></div>
     </div>
 
     <!-- API Key -->
@@ -661,6 +550,72 @@ input::placeholder{color:var(--muted)}
   </section>
 
 </div><!-- .app -->
+
+<!-- PROFILE EDIT BOTTOM SHEET -->
+<div class="help-overlay" id="profileEditOverlay" onclick="closeProfileEdit()"></div>
+<div id="profileEditSheet">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <span style="font-size:16px;font-weight:700">Редактировать профиль</span>
+    <button onclick="closeProfileEdit()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:0;line-height:1">✕</button>
+  </div>
+  <div class="pf-row">
+    <div class="pf-lbl">Пол</div>
+    <div class="gender-tabs">
+      <button class="gender-tab active" id="pfGenderMale"   onclick="setGender('male','pf')">♂ Мужчина</button>
+      <button class="gender-tab"        id="pfGenderFemale" onclick="setGender('female','pf')">♀ Женщина</button>
+    </div>
+  </div>
+  <div class="pf-2col">
+    <div><label class="pf-sublbl">Возраст</label><input type="number" id="pf-age" min="10" max="100" placeholder="лет" oninput="onProfileChange('pf')"></div>
+    <div><label class="pf-sublbl">Вес (кг)</label><input type="number" id="pf-weight" min="30" max="250" placeholder="кг" oninput="onProfileChange('pf')"></div>
+  </div>
+  <div class="pf-row">
+    <label class="pf-sublbl">Рост (см)</label>
+    <input type="number" id="pf-height" min="100" max="250" placeholder="см" oninput="onProfileChange('pf')">
+  </div>
+  <div class="pf-row">
+    <div class="pf-lbl">Уровень активности</div>
+    <select class="pf-select" id="pf-act" onchange="onProfileChange('pf')">
+      <option value="1.2">Минимальный (&lt;3 000 шагов/день)</option>
+      <option value="1.375" selected>Низкий (3 000–7 000 шагов/день)</option>
+      <option value="1.55">Средний (7 000–12 000 шагов/день)</option>
+      <option value="1.725">Высокий (12 000+ шагов/день)</option>
+    </select>
+  </div>
+  <div class="pf-row">
+    <label class="pf-sublbl">Цель</label>
+    <select class="pf-select" id="pf-goal" onchange="onGoalChange('pf')">
+      <option value="loss">Похудение</option>
+      <option value="maintain">Поддержание</option>
+      <option value="gain">Набор мышц</option>
+    </select>
+  </div>
+  <div class="pf-row" id="pf-mode-row">
+    <label class="pf-sublbl">Режим</label>
+    <select class="pf-select" id="pf-mode" onchange="onProfileChange('pf')">
+      <option value="mild">Мягкий</option>
+      <option value="moderate" selected>Умеренный</option>
+      <option value="intense">Интенсивный</option>
+    </select>
+  </div>
+  <div class="tdee-info" id="pf-tdee-info"></div>
+  <div class="targets-grid">
+    <div class="tg-box"><span class="tg-lbl" style="color:var(--kcal)">Ккал</span><input type="number" class="tg-input" id="pf-kcal" min="1000" max="5000"></div>
+    <div class="tg-box"><span class="tg-lbl" style="color:var(--prot)">Белок</span><input type="number" class="tg-input" id="pf-prot" min="50" max="400"></div>
+    <div class="tg-box"><span class="tg-lbl">Жиры</span><input type="number" class="tg-input" id="pf-fat" min="20" max="300"></div>
+    <div class="tg-box"><span class="tg-lbl" style="color:var(--balance)">Углев</span><input type="number" class="tg-input" id="pf-carb" min="0" max="600"></div>
+  </div>
+  <div class="toggle-row" style="margin-top:10px">
+    <span class="toggle-lbl">Учитывать активность (Garmin)</span>
+    <label class="toggle">
+      <input type="checkbox" id="pf-track-act" checked>
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <label class="recalc-check"><input type="checkbox" id="recalcHistory" checked> Пересчитать баллы за всю историю</label>
+  <button class="btn btn-full" style="margin-top:4px" onclick="saveProfileFromSheet()">Сохранить</button>
+  <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeProfileEdit()">Отмена</button>
+</div>
 
 <!-- HELP BOTTOM SHEET -->
 <div class="help-overlay" id="helpOverlay" onclick="closeHelp()"></div>
@@ -831,7 +786,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.3.7';
+const VERSION = '1.3.8';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -916,6 +871,7 @@ let _swipeStartX    = 0;
 function initApp() {
   loadProfile();
   populateProfileForm('pf');
+  renderProfileCard();
 
   let migrated = false;
   history.forEach((h, i) => {
@@ -1169,7 +1125,7 @@ function goTo(name) {
   document.getElementById('nav-' + name).classList.add('active');
   if (name === 'history')  renderHistory();
   if (name === 'day')      renderDayView();
-  if (name === 'settings') renderUserFoodsList();
+  if (name === 'settings') { renderUserFoodsList(); renderProfileCard(); }
 }
 
 // ═══════════════════════════════════════════
@@ -2131,6 +2087,72 @@ function drawAxisRight(area, h, kgPad, y2Ticks) {
 function renderProfileCard() {
   // kept for backwards compat — actual form population is in populateProfileForm
   updateDayScoreLabels();
+}
+
+// ── Profile card + edit sheet ──
+const GOAL_NAMES = { loss:'Похудение', maintain:'Поддержание', gain:'Набор мышц' };
+const MODE_NAMES = { mild:'Мягкий', moderate:'Умеренный', intense:'Интенсивный' };
+const ACT_NAMES  = { '1.2':'Мин.', '1.375':'Низкий', '1.55':'Средний', '1.725':'Высокий' };
+
+function renderProfileCard() {
+  const el = document.getElementById('profileCard');
+  if (!el) return;
+  const p = lsGet('profile', null);
+  if (!p || !p.age || !p.weight || !p.height) {
+    el.innerHTML = `<button class="btn btn-ghost btn-full" onclick="openProfileEdit()">Заполнить профиль</button>`;
+    el.onclick = null;
+    return;
+  }
+  const gIcon    = p.gender === 'female' ? '♀' : '♂';
+  const goalLine = [GOAL_NAMES[p.goal], p.goal !== 'maintain' ? MODE_NAMES[p.mode] : null, ACT_NAMES[String(p.actCoef)]].filter(Boolean).join(' · ');
+  el.innerHTML = `<div><div class="profile-main">${gIcon} ${p.age} лет · ${p.weight} кг · ${p.height} см</div><div class="profile-goal">${goalLine}</div><div class="profile-targets">${p.kcal} ккал · Б${p.prot}г · Ж${p.fat}г · У${p.carb}г</div><div class="profile-edit-hint">Нажми чтобы изменить ›</div></div>`;
+  el.onclick = openProfileEdit;
+}
+
+function openProfileEdit() {
+  populateProfileForm('pf');
+  document.getElementById('profileEditSheet').style.transform = 'translateY(0)';
+  document.getElementById('profileEditOverlay').classList.add('open');
+}
+
+function closeProfileEdit() {
+  document.getElementById('profileEditSheet').style.transform = 'translateY(100%)';
+  document.getElementById('profileEditOverlay').classList.remove('open');
+}
+
+function recalcAllHistory() {
+  const updated = history.map(h => {
+    const r = getScoresForDay(h);
+    return { ...h, scores: r.scores, total: r.total, dayTotal: r.dayTotal, kgPerMonth: calcKgPerMonth(h) };
+  });
+  history = updated;
+  lsSave('history', updated);
+}
+
+function saveProfileFromSheet() {
+  const prevGoal = lsGet('profile', {}).goal;
+  const profile  = readProfileForm('pf');
+  lsSave('profile', profile);
+  G = { kcal: profile.kcal, prot: profile.prot, fat: profile.fat, carb: profile.carb };
+  const doRecalc = document.getElementById('recalcHistory')?.checked;
+  if (doRecalc) {
+    recalcAllHistory();
+    renderHistory();
+    toast('✅ Профиль обновлён · История пересчитана');
+  } else {
+    renderHistory();
+    toast('✅ Профиль обновлён');
+  }
+  updateTotals();
+  updateDayScoreLabels();
+  renderProfileCard();
+  closeProfileEdit();
+  const firstTime  = !localStorage.getItem('helpShownAfterProfile');
+  const goalChanged = prevGoal && prevGoal !== profile.goal;
+  if (firstTime || goalChanged) {
+    localStorage.setItem('helpShownAfterProfile', profile.goal);
+    setTimeout(() => openHelp(), 500);
+  }
 }
 
 function getScoresForDay(h) {
