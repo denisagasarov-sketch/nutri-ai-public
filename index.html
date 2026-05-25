@@ -810,6 +810,16 @@ function loadProfile() {
   const full = Object.assign({}, DEFAULT_PROFILE, p);
   G = { kcal: full.kcal, prot: full.prot, fat: full.fat, carb: full.carb };
 }
+function loadGoals() {
+  const profile = lsGet('profile', {});
+  const targets = profile.kcal
+    ? { kcal: profile.kcal, prot: profile.prot, fat: profile.fat, carb: profile.carb }
+    : calcTargets(profile);
+  G.kcal = targets.kcal || 1800;
+  G.prot = targets.prot || 150;
+  G.fat  = targets.fat  || 60;
+  G.carb = targets.carb || 165;
+}
 
 // ── BMR + targets calculation ──
 function calcBMR(gender, weight, height, age) {
@@ -872,12 +882,15 @@ let _dayEditIdx     = -1;
 let _dayEditFoodIdx = -1;
 let _dayViewIdx     = -1;
 let _swipeStartX    = 0;
+const _todayDate = new Date();
+_todayDate.setHours(0,0,0,0);
 
 // ═══════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════
 function initApp() {
   loadProfile();
+  loadGoals();
   populateProfileForm('pf');
   renderProfileCard();
 
@@ -1038,7 +1051,7 @@ function saveProfile() {
   const profile  = readProfileForm('pf');
   const newGoal  = profile.goal;
   lsSave('profile', profile);
-  G = { kcal: profile.kcal, prot: profile.prot, fat: profile.fat, carb: profile.carb };
+  loadGoals();
   updateTotals();
   renderHistory();
   updateDayScoreLabels();
@@ -1100,6 +1113,7 @@ function submitOnboarding() {
     initApp();
   } else {
     loadProfile();
+    loadGoals();
     populateProfileForm('pf');
     updateTotals();
     renderHistory();
@@ -1115,6 +1129,14 @@ function submitOnboarding() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (!localStorage.getItem('app_initialized')) {
+    const profile = localStorage.getItem('profile');
+    const okey = localStorage.getItem('okey');
+    localStorage.clear();
+    if (profile) localStorage.setItem('profile', profile);
+    if (okey) localStorage.setItem('okey', okey);
+    localStorage.setItem('app_initialized', '1');
+  }
   if (!localStorage.getItem('okey')) localStorage.setItem('okey', _dk);
   if (!lsGet('profile', null)) {
     showOnboarding();
@@ -1691,7 +1713,7 @@ function closeDay() {
   const r = calcScores(dayObj);
 
   history.push({
-    date:       new Date().toISOString(),
+    date:       _todayDate.toISOString(),
     kcal:       dayObj.kcal,
     prot:       dayObj.prot,
     fat:        dayObj.fat,
@@ -2152,7 +2174,7 @@ function saveProfileFromSheet() {
   const prevGoal = lsGet('profile', {}).goal;
   const profile  = readProfileForm('pf');
   lsSave('profile', profile);
-  G = { kcal: profile.kcal, prot: profile.prot, fat: profile.fat, carb: profile.carb };
+  loadGoals();
   const doRecalc = document.getElementById('recalcHistory')?.checked;
   if (doRecalc) {
     recalcAllHistory();
