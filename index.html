@@ -750,6 +750,10 @@ input::placeholder{color:var(--muted)}
       <span id="dayEditTitle">Редактировать день</span>
       <button class="modal-close" onclick="closeDayEditModal()">×</button>
     </div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Дата</label>
+      <input type="date" id="dayEditDate" style="font-size:15px;width:100%;box-sizing:border-box;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;-webkit-appearance:none">
+    </div>
     <div id="dayEditFoodList"></div>
     <div style="margin-top:10px">
       <div class="row">
@@ -2284,6 +2288,10 @@ function openDayEditModal(idx) {
   document.getElementById('dayEditFoodInput').value = '';
   document.getElementById('dayEditStatus').textContent = '';
   document.getElementById('dayEditActKcal').value = h.actKcal || 0;
+  if (h.date) {
+    const d = new Date(h.date);
+    document.getElementById('dayEditDate').value = d.toISOString().slice(0,10);
+  }
   renderDayEditFoodList();
   document.getElementById('dayEditModal').style.display = 'flex';
 }
@@ -2292,11 +2300,20 @@ function closeDayEditModal() {
   if (_dayEditIdx >= 0) {
     const h = history[_dayEditIdx];
     h.actKcal = parseInt(document.getElementById('dayEditActKcal').value) || 0;
+    const dateVal = document.getElementById('dayEditDate').value;
+    if (dateVal) {
+      const newDate = new Date(dateVal);
+      newDate.setHours(12,0,0,0);
+      const dateChanged = h.date && h.date.slice(0,10) !== dateVal;
+      h.date = newDate.toISOString();
+      if (dateChanged) toast('✅ Дата обновлена');
+    }
     const r = calcScores(h);
     h.scores     = r.scores;
     h.total      = r.total;
     h.dayTotal   = r.dayTotal;
     h.kgPerMonth = r.kgPerMonth;
+    history.sort((a,b) => new Date(a.date) - new Date(b.date));
     lsSave('history', history);
   }
   document.getElementById('dayEditModal').style.display = 'none';
