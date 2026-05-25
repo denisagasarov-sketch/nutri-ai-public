@@ -321,17 +321,22 @@ input::placeholder{color:var(--muted)}
   <!-- ═══ TODAY ═══ -->
   <section class="sec active" id="sec-today">
 
-    <!-- Блок 1: балл + стрик + темп -->
-    <div class="card" id="todayScoreCard">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="flex-shrink:0">
-          <div id="todayScore" style="font-size:52px;font-weight:700;color:#a78bfa;line-height:1">—</div>
-          <div style="font-size:10px;color:#555;margin-top:2px;text-align:center">из 115 пт</div>
+    <!-- Блок 1: статус дня -->
+    <div id="todayStatusCard" class="card"
+      style="border:0.5px solid transparent;transition:background 0.3s,border-color 0.3s">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div id="todayStatusLabel" style="font-size:11px;margin-bottom:4px;transition:color 0.3s"></div>
+          <div id="todayStatusValue" style="font-size:36px;font-weight:700;line-height:1;transition:color 0.3s"></div>
         </div>
-        <div style="flex:1">
-          <div id="todayTempo" style="font-size:18px;font-weight:600;color:#1D9E75"></div>
-          <div id="todayRemain" style="font-size:11px;color:#555;margin-top:2px"></div>
+        <div style="text-align:right">
+          <div id="todayScore" style="font-size:32px;font-weight:700;color:#a78bfa;line-height:1">—</div>
+          <div style="font-size:10px;color:#555;margin-top:2px">из 115 пт</div>
         </div>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <div id="todayTempo" style="font-size:12px"></div>
+        <div id="todayEaten" style="font-size:11px;color:#555"></div>
       </div>
     </div>
 
@@ -845,7 +850,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.42';
+const VERSION = '1.4.43';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -1770,51 +1775,47 @@ function updateTodayScreen() {
   const kgMon = Math.round(-deficit * 30 / 7700 * 10) / 10;
   const streak = calcStreak(history);
 
-  // Блок 1: балл + темп + стрик
+  // Блок 1: статус дня
   const scoreEl = document.getElementById('todayScore');
   if (scoreEl) scoreEl.textContent = foods.length ? (sc.dayTotal || 0) : '—';
+
+  const remain = G.kcal - totKcal;
+  const isOver = remain < 0;
+  const statusColor = isOver ? '#E24B4A' : '#1D9E75';
+
+  const statusCard = document.getElementById('todayStatusCard');
+  if (statusCard) {
+    statusCard.style.background = isOver
+      ? 'linear-gradient(135deg,rgba(226,75,74,0.12),rgba(226,75,74,0.03))'
+      : 'linear-gradient(135deg,rgba(29,158,117,0.12),rgba(29,158,117,0.03))';
+    statusCard.style.borderColor = isOver
+      ? 'rgba(226,75,74,0.25)' : 'rgba(29,158,117,0.25)';
+  }
+
+  const labelEl = document.getElementById('todayStatusLabel');
+  if (labelEl) {
+    labelEl.textContent = isOver ? 'перебор сегодня' : 'осталось сегодня';
+    labelEl.style.color = statusColor + '88';
+  }
+
+  const valueEl = document.getElementById('todayStatusValue');
+  if (valueEl) {
+    valueEl.textContent = isOver
+      ? '+' + fmtRu(Math.abs(remain), 0) + ' ккал'
+      : fmtRu(remain, 0) + ' ккал';
+    valueEl.style.color = statusColor;
+  }
 
   const tempoEl = document.getElementById('todayTempo');
   if (tempoEl) {
     tempoEl.textContent = (kgMon <= 0 ? '↓ ' : '↑ ') +
       fmtRu(Math.abs(kgMon), 1) + ' кг/мес';
-    tempoEl.style.color = kgMon <= 0 ? '#1D9E75' : '#E24B4A';
+    tempoEl.style.color = statusColor;
   }
 
-  const remainEl = document.getElementById('todayRemain');
-  if (remainEl) {
-    const rem = G.kcal - totKcal;
-    remainEl.textContent = rem >= 0
-      ? 'осталось ' + Math.round(rem) + ' ккал'
-      : 'перебор +' + Math.round(-rem) + ' ккал';
-    remainEl.style.color = rem >= 0 ? '#555' : '#E24B4A';
-  }
-
-  const streakEl = document.getElementById('todayStreak');
-  if (streakEl) {
-    const last7 = getLast7Days(history);
-    streakEl.innerHTML = last7.map((h, i) => {
-      const isToday = i === 6;
-      let color;
-      if (isToday) color = 'rgba(167,139,250,0.4)';
-      else if (!h)  color = 'rgba(255,255,255,0.05)';
-      else {
-        const hEff = (h.kcal||0) - (h.actKcal||0);
-        const hBmr = profile.weight
-          ? calcBMR(profile.gender, profile.weight, profile.height, profile.age)
-          : (G.kcal || 1800);
-        color = (hBmr - hEff) > 0 ? '#1D9E75' : '#E24B4A33';
-      }
-      return '<div style="flex:1;height:3px;border-radius:2px;background:' + color + '"></div>';
-    }).join('');
-  }
-
-  const streakLabelEl = document.getElementById('todayStreakLabel');
-  if (streakLabelEl) {
-    streakLabelEl.textContent = streak > 0
-      ? '🔥 ' + streak + ' ' +
-        (streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней') + ' подряд'
-      : '';
+  const eatenEl = document.getElementById('todayEaten');
+  if (eatenEl) {
+    eatenEl.textContent = 'съедено ' + fmtRu(totKcal, 0) + ' ккал';
   }
 
   // Блок 3: КБЖУ бары
