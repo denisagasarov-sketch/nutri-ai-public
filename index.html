@@ -800,7 +800,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.8';
+const VERSION = '1.4.9';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -890,6 +890,7 @@ let _dayViewIdx     = -1;
 let _swipeStartX    = 0;
 let _perDay         = 40;
 let _chartFullscreen = false;
+const FONT          = 21;
 const _todayDate = new Date();
 _todayDate.setHours(0,0,0,0);
 
@@ -2026,19 +2027,14 @@ const kgLabelPlugin = {
     const dataset = chart.data.datasets[0];
     const meta = chart.getDatasetMeta(0);
     const dpr = window.devicePixelRatio || 1;
+    const fontSize = Math.round(FONT / dpr);
     meta.data.forEach((bar, i) => {
       const val = dataset.data[i];
       if (val === null || val === undefined) return;
-      const label = (val > 0 ? '+' : '') + val.toFixed(1) + ' кг/мес';
-      const barWidth = bar.width || _perDay * 0.8;
-      let fontSize = Math.round(21 / dpr);
-      ctx.font = `bold ${fontSize}px ${Chart.defaults.font.family}`;
-      while (ctx.measureText(label).width > barWidth - 4 && fontSize > 6) {
-        fontSize--;
-        ctx.font = `bold ${fontSize}px ${Chart.defaults.font.family}`;
-      }
+      const label = (val > 0 ? '+' : '') + val.toFixed(1);
       ctx.save();
       ctx.fillStyle = '#ffffff';
+      ctx.font = `${fontSize}px ${Chart.defaults.font.family}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = val <= 0 ? 'bottom' : 'top';
       const yPos = val <= 0 ? bar.y - 3 : bar.y + 3;
@@ -2059,7 +2055,6 @@ function renderChart() {
   const goal   = lsGet('profile', {}).goal || 'loss';
   const dpr    = window.devicePixelRatio || 1;
   const H      = getChartHeight();
-  const FONT   = 21;
   const wrapper = document.getElementById('chartWrapper');
   if (!wrapper || wrapper.clientWidth === 0) {
     setTimeout(() => renderChart(), 100);
