@@ -787,7 +787,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.24';
+const VERSION = '1.4.25';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -1158,11 +1158,14 @@ document.addEventListener('DOMContentLoaded', () => {
 //  NAVIGATION
 // ═══════════════════════════════════════════
 function onHistoryTabShow() {
-  requestAnimationFrame(() => {
+  renderHistoryWeeks();
+  setTimeout(() => {
     requestAnimationFrame(() => {
-      renderHistory();
+      requestAnimationFrame(() => {
+        renderChart();
+      });
     });
-  });
+  }, 100);
 }
 
 function goTo(name) {
@@ -2002,15 +2005,17 @@ function renderChart() {
   if (!wrapper) { setTimeout(() => renderChart(), 100); return; }
 
   function getChartWrapperWidth() {
-    const w = wrapper.clientWidth ||
-      wrapper.parentElement?.clientWidth ||
-      window.innerWidth - 120;
-    return Math.max(w, 200);
+    void wrapper.offsetWidth;
+    const w = wrapper.getBoundingClientRect().width;
+    if (!w || w < 50) return window.innerWidth - 120;
+    return w;
   }
   const wrapperW = getChartWrapperWidth();
-  const perDay = getPerDay(history.length, wrapperW);
+  const perDay = history.length <= 10
+    ? Math.floor(wrapperW / history.length) + 1
+    : Math.max(28, Math.floor(wrapperW / 10));
   _perDay = perDay;
-  const mainW  = Math.max(history.length * perDay, wrapperW + 1);
+  const mainW = history.length * perDay;
 
   const labels  = history.map(h => {
     const d = new Date(h.date);
