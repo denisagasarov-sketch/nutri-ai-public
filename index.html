@@ -797,7 +797,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.15';
+const VERSION = '1.4.16';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -2099,12 +2099,12 @@ function renderChart() {
           borderWidth: 1, borderRadius: 3, order: 3, yAxisID: 'y2' },
         { label: 'Питание', data: питание, type: 'line',
           borderColor: '#185FA5', backgroundColor: 'transparent',
-          borderWidth: 4, pointBackgroundColor: '#185FA5',
-          pointRadius: 3, pointHoverRadius: 5, tension: 0.4, order: 1, yAxisID: 'y' },
+          borderWidth: 8, pointBackgroundColor: '#185FA5',
+          pointRadius: 5, pointHoverRadius: 7, tension: 0.4, order: 1, yAxisID: 'y' },
         { label: 'День', data: день, type: 'line',
           borderColor: '#a78bfa', backgroundColor: 'transparent',
-          borderWidth: 4, pointBackgroundColor: '#a78bfa',
-          pointRadius: 3, pointHoverRadius: 5, tension: 0.4, order: 2, yAxisID: 'y' }
+          borderWidth: 8, pointBackgroundColor: '#a78bfa',
+          pointRadius: 5, pointHoverRadius: 7, tension: 0.4, order: 2, yAxisID: 'y' }
       ]
     },
     options: {
