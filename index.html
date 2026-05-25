@@ -283,6 +283,9 @@ input::placeholder{color:var(--muted)}
 .hw-day-score{font-size:12px;min-width:32px;text-align:right;flex-shrink:0}
 .hw-edit-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:.65;flex-shrink:0;line-height:1}
 .hw-day-detail{padding:0 14px 10px}
+.hw-tabs{display:flex;gap:4px;margin-bottom:10px;background:rgba(255,255,255,0.04);border-radius:8px;padding:3px}
+.hw-tab{flex:1;text-align:center;padding:6px;font-size:12px;color:#555;border-radius:6px;cursor:pointer}
+.hw-tab-active{background:rgba(255,255,255,0.08);color:#fff}
 .hw-kbzhu{background:rgba(255,255,255,0.03);border-radius:8px;padding:6px 12px}
 .hw-kbzhu-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.05)}
 .hw-kbzhu-row:last-child{border-bottom:none}
@@ -838,7 +841,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.33';
+const VERSION = '1.4.34';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -2580,6 +2583,34 @@ function renderHistoryDayRow(h, idx, bmr, targets) {
   const defSign  = isDeficit ? '−' : '+';
   const kgColor2 = kgColor;
 
+  // Build foods tab content
+  const _dayFoods = h.foods || [];
+  const _fmerged = {};
+  _dayFoods.forEach(f => {
+    const key = (f.name||'').toLowerCase().trim();
+    if (!_fmerged[key]) _fmerged[key] = {
+      name: f.name, weight: 0, kcal: 0, prot: 0, fat: 0, carb: 0,
+      cleanliness: f.cleanliness
+    };
+    _fmerged[key].weight += (f.weight||0);
+    _fmerged[key].kcal   += (f.kcal||0);
+    _fmerged[key].prot   += (f.prot||0);
+    _fmerged[key].fat    += (f.fat||0);
+    _fmerged[key].carb   += (f.carb||0);
+  });
+  const foodsHTML = Object.values(_fmerged).length
+    ? Object.values(_fmerged).sort((a,b) => b.kcal - a.kcal).map(f => {
+        const cleanLabel = f.cleanliness === 'junk' ? 'мусор' : f.cleanliness === 'snack' ? 'снек' : 'чистое';
+        const cleanColor = f.cleanliness === 'clean' ? '#1D9E75' : '#E24B4A';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid rgba(255,255,255,0.04);font-size:12px">'
+          + '<div style="flex:1"><span style="color:#ccc">' + esc(f.name) + '</span>'
+          + '<span style="color:#444;margin-left:4px">' + fmtRu(f.weight,0) + ' г</span>'
+          + '<div style="font-size:10px;color:#444;margin-top:2px">Б' + fmtRu(f.prot,1) + ' · Ж' + fmtRu(f.fat,1) + ' · У' + fmtRu(f.carb,1)
+          + ' г · <span style="color:' + cleanColor + '">' + cleanLabel + '</span></div></div>'
+          + '<span style="color:#555;flex-shrink:0;margin-left:8px">' + fmtRu(f.kcal,0) + ' ккал</span></div>';
+      }).join('')
+    : '<div style="font-size:12px;color:#444;padding:8px 0">нет данных</div>';
+
   return `<div class="hw-day" onclick="hwToggleDay('${detailId}')">
   <div class="hw-day-main">
     <div class="hw-date">${fmtDate(h.date)}</div>
@@ -2595,6 +2626,11 @@ function renderHistoryDayRow(h, idx, bmr, targets) {
     </div>
   </div>
   <div class="hw-day-detail" id="${detailId}" style="display:none">
+    <div class="hw-tabs">
+      <div class="hw-tab hw-tab-active" onclick="event.stopPropagation();hwSwitchTab(this,'summary')">Сводка</div>
+      <div class="hw-tab" onclick="event.stopPropagation();hwSwitchTab(this,'foods')">Продукты</div>
+    </div>
+    <div class="hw-tab-content hw-tab-summary">
     <div class="hw-calc">
       <div class="hw-calc-row"><span>Съедено</span><span>${h.kcal || 0} ккал</span></div>
       <div class="hw-calc-row"><span>Сожжено (активность)</span><span style="color:#1D9E75">− ${h.actKcal || 0} ккал</span></div>
@@ -2611,6 +2647,8 @@ function renderHistoryDayRow(h, idx, bmr, targets) {
       <div class="hw-kbzhu-row"><span>Жиры</span><span>${h.fat || 0} / ${targets.fat} г</span><span style="color:var(--muted)">${fPct}%</span></div>
       <div class="hw-kbzhu-row"><span style="color:var(--balance)">Углев</span><span>${h.carb || 0} / ${targets.carb} г</span><span style="color:var(--muted)">${cPct}%</span></div>
     </div>
+    </div>
+    <div class="hw-tab-content hw-tab-foods" style="display:none">${foodsHTML}</div>
   </div>
 </div>`;
 }
@@ -2619,6 +2657,16 @@ function hwToggleDay(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function hwSwitchTab(tabEl, tabName) {
+  const detail = tabEl.closest('.hw-day-detail');
+  if (!detail) return;
+  detail.querySelectorAll('.hw-tab').forEach(t => t.classList.remove('hw-tab-active'));
+  tabEl.classList.add('hw-tab-active');
+  detail.querySelectorAll('.hw-tab-content').forEach(c => c.style.display = 'none');
+  const target = detail.querySelector('.hw-tab-' + tabName);
+  if (target) target.style.display = 'block';
 }
 function fmtNum(n) { return String(n); }
 
