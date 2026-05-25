@@ -845,7 +845,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.39';
+const VERSION = '1.4.40';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -1273,28 +1273,37 @@ function restoreDefaultKey() {
 // ═══════════════════════════════════════════
 //  ADD FOOD (text)
 // ═══════════════════════════════════════════
+function extractQueryAndWeight(text) {
+  const weightMatch = text.match(/(\d+)\s*г/i);
+  const weight = weightMatch ? parseInt(weightMatch[1]) : null;
+  const query = text.replace(/\d+\s*г/i, '').trim();
+  return { query, weight };
+}
+
 function lookupUserFoods(txt) {
   const userFoods = lsGet('userFoods', []);
   if (!userFoods.length) return null;
-  const q = txt.toLowerCase().trim();
+  const { query, weight } = extractQueryAndWeight(txt);
+  if (!weight) return null;
+  const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+  if (!queryWords.length) return null;
   const found = userFoods.find(p => {
-    if (q.includes(p.name.toLowerCase())) return true;
+    if (queryWords.every(w => p.name.toLowerCase().includes(w))) return true;
     if (p.aliases && p.aliases.length) {
       return p.aliases.some(a =>
-        q.includes(a.toLowerCase()) ||
-        a.toLowerCase().includes(q.split(/\s+/)[0])
+        queryWords.some(w =>
+          a.toLowerCase().startsWith(w.toLowerCase()) ||
+          w.toLowerCase().startsWith(a.toLowerCase())
+        )
       );
     }
     return false;
   });
   if (!found) return null;
-  const wm = txt.match(/(\d+(?:[.,]\d+)?)\s*(?:г(?:р(?:амм?)?)?|мл|ml|g(?:r(?:am)?)?)(?=\s|$|[^а-яёa-z])/i);
-  if (!wm) return null;
-  const weight = parseFloat(wm[1].replace(',', '.'));
   const factor = weight / 100;
   return {
     name:        found.name,
-    weight:      Math.round(weight),
+    weight:      weight,
     kcal:        Math.round(found.kcal * factor),
     prot:        Math.round(found.prot * factor * 10) / 10,
     fat:         Math.round(found.fat  * factor * 10) / 10,
@@ -1510,7 +1519,7 @@ async function lookupProductGPT(name) {
       temperature: 0.1,
       max_tokens: 300,
       messages: [{ role: 'user', content:
-        `Найди КБЖУ для "${name}" на 100г и предложи 3-5 коротких русских алиасов как люди пишут этот продукт.\nОтвечай ТОЛЬКО JSON без пояснений:\n{"name":"...","kcal":0,"prot":0,"fat":0,"carb":0,"aliases":["алиас1","алиас2"]}\nЧисла округли до 1 знака после запятой.` }]
+        `Найди точное КБЖУ для "${name}" на 100 грамм.\nТакже предложи 3-5 коротких алиасов — как человек может написать этот продукт вкратце (например для "Куриная грудка тандыр" алиасы: кура, курочка, грудка).\nОтвечай ТОЛЬКО валидным JSON без пояснений и markdown:\n{"name":"полное название","kcal":0,"prot":0,"fat":0,"carb":0,"aliases":["короткий1","короткий2","короткий3"]}` }]
     })
   });
   if (!resp.ok) throw new Error('HTTP ' + resp.status);
