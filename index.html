@@ -289,6 +289,26 @@ input::placeholder{color:var(--muted)}
 .hw-kbzhu-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.05)}
 .hw-kbzhu-row:last-child{border-bottom:none}
 .hw-empty{text-align:center;color:var(--muted);padding:28px 16px;font-size:14px}
+.hw-bar-wrap{flex:1;height:5px;background:rgba(255,255,255,0.07);border-radius:3px;min-width:0}
+.hw-bar{height:5px;border-radius:3px}
+.hw-calc{background:rgba(255,255,255,0.03);border-radius:8px;padding:6px 12px;margin-bottom:0}
+.hw-calc-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.hw-result{font-weight:600;font-size:13px}
+.hw-tempo-row{font-size:12px;padding-bottom:2px}
+.hw-divider{border-top:1px solid rgba(255,255,255,0.08);margin:3px 0}
+.hw-summary{background:rgba(255,255,255,0.02);border-top:1px solid var(--border);padding:12px 14px}
+.hw-summary-title{font-size:10px;font-weight:700;letter-spacing:.7px;color:var(--muted);margin-bottom:10px}
+.hw-summary-top{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.hw-sum-item{text-align:center}
+.hw-sum-val{font-size:16px;font-weight:700;line-height:1.2}
+.hw-sum-label{font-size:10px;color:var(--muted);margin-top:2px}
+.hw-avg-kbju{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px 12px}
+.hw-avg-title{font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted);margin-bottom:6px}
+.hw-avg-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.hw-avg-item{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.hw-pct{color:var(--muted);font-size:11px}
+.hw-pct.over{color:var(--kcal)}
+.hw-pct.ok{color:var(--clean)}
 </style>
 </head>
 <body>
@@ -461,7 +481,6 @@ input::placeholder{color:var(--muted)}
       <div id="chartOuter" style="position:relative">
         <div id="chartTip" style="position:absolute;top:8px;background:rgba(15,15,26,0.95);border:0.5px solid #444;border-radius:8px;padding:8px 12px;font-size:13px;color:#fff;pointer-events:none;display:none;z-index:10;white-space:nowrap">
           <div id="tipTitle" style="font-weight:500;margin-bottom:6px;color:#ccc;font-size:13px"></div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="width:8px;height:8px;border-radius:2px;background:#185FA5;flex-shrink:0"></span><span id="tipPit"></span></div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="width:8px;height:8px;border-radius:2px;background:#a78bfa;flex-shrink:0"></span><span id="tipDay"></span></div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span id="tipTempDot" style="width:8px;height:8px;border-radius:2px;flex-shrink:0"></span><span id="tipTemp"></span></div>
         </div>
@@ -780,7 +799,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.19';
+const VERSION = '1.4.20';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -2068,10 +2087,6 @@ function renderChart() {
           backgroundColor: темп.map(v => bc(v) + 'BB'),
           borderColor: темп.map(v => bc(v)),
           borderWidth: 1, borderRadius: 3, order: 3, yAxisID: 'y2' },
-        { label: 'Питание', data: питание, type: 'line',
-          borderColor: '#185FA5', backgroundColor: 'transparent',
-          borderWidth: 8, pointBackgroundColor: '#185FA5',
-          pointRadius: 5, pointHoverRadius: 7, tension: 0.4, order: 1, yAxisID: 'y' },
         { label: 'День', data: день, type: 'line',
           borderColor: '#a78bfa', backgroundColor: 'transparent',
           borderWidth: 8, pointBackgroundColor: '#a78bfa',
@@ -2101,7 +2116,6 @@ function renderChart() {
   function initChartTooltip() {
     const tip = document.getElementById('chartTip');
     const tipTitle = document.getElementById('tipTitle');
-    const tipPit = document.getElementById('tipPit');
     const tipDay_ = document.getElementById('tipDay');
     const tipTemp = document.getElementById('tipTemp');
     const tipTempDot = document.getElementById('tipTempDot');
@@ -2116,7 +2130,6 @@ function renderChart() {
       const color = bc(kgVal);
       const kgStr = (kgVal <= 0 ? '↓ ' : '↑ +') + Math.abs(kgVal).toFixed(1) + ' кг/мес';
       tipTitle.textContent = labels[idx];
-      tipPit.textContent = 'Питание: ' + питание[idx] + ' пт';
       tipDay_.textContent = 'День: ' + день[idx] + ' пт';
       tipTemp.textContent = 'Темп: ' + kgStr;
       tipTempDot.style.background = color;
@@ -2319,19 +2332,22 @@ function renderHistoryWeek(monKey, items, bmr, targets) {
   const kgEst = Math.round(-totalDeficit / 7700 * 10) / 10;
   const kgStr = (kgEst > 0 ? '+' : '') + kgEst.toFixed(1);
   const kgColor = kgEst <= 0 ? 'var(--clean)' : 'var(--kcal)';
-  const avgScore = items.length
-    ? Math.round(items.reduce((s, { h }) => s + (h.dayTotal || h.total || 0), 0) / items.length)
-    : 0;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const monDate = new Date(monKey);
+  const sunDate = new Date(monKey); sunDate.setDate(monDate.getDate() + 6);
+  const isCurrent = monDate <= today && today <= sunDate;
+  const closedDays = items.map(({ h }) => h);
 
   return `<div class="hw-week">
   <div class="hw-week-hdr">
     <span class="hw-week-range">${rangeLabel}</span>
     <div class="hw-week-stats">
       <span style="color:${kgColor}">${kgStr} кг</span>
-      <span style="color:var(--muted)">${items.length} дн · ср. ${avgScore}б</span>
+      <span style="color:var(--muted)">${items.length} дн</span>
     </div>
   </div>
   ${items.map(({ h, idx }) => renderHistoryDayRow(h, idx, bmr, targets)).join('')}
+  ${renderWeeklySummary(closedDays, isCurrent, bmr, targets)}
 </div>`;
 }
 
@@ -2359,19 +2375,34 @@ function renderHistoryDayRow(h, idx, bmr, targets) {
     ? `<div class="hw-kbzhu-row"><span style="color:var(--activity)">Активность</span><span>+${h.actKcal} сожжено</span><span></span></div>`
     : '';
 
+  const isDeficit = kgDay <= 0;
+  const barColor = isDeficit ? '#1D9E75' : '#E24B4A';
+  const barW = targets.kcal ? Math.min(100, Math.round((h.kcal || 0) / targets.kcal * 100)) : 0;
+  const kgColor2 = barColor;
+
   return `<div class="hw-day" onclick="hwToggleDay('${detailId}')">
   <div class="hw-day-main">
     <span class="hw-day-label">${dayLabel}</span>
+    <div class="hw-bar-wrap"><div class="hw-bar" style="width:${barW}%;background:${barColor}88"></div></div>
     <span class="hw-day-kcal">${h.kcal || 0} ккал</span>
     <span class="hw-day-def" style="color:${tempoColor}">${tempoStr} кг/мес</span>
   </div>
   <div class="hw-day-detail" id="${detailId}" style="display:none">
-    <div class="hw-kbzhu">
+    <div class="hw-calc">
+      <div class="hw-calc-row"><span>Съедено</span><span>${h.kcal || 0} ккал</span></div>
+      <div class="hw-calc-row"><span>Сожжено (активность)</span><span style="color:#1D9E75">− ${h.actKcal || 0} ккал</span></div>
+      <div class="hw-divider"></div>
+      <div class="hw-calc-row"><span>Реальное потребление</span><span>${effKcal} ккал</span></div>
+      <div class="hw-calc-row"><span>Базовый расход (BMR)</span><span style="color:#888">${Math.round(bmr)} ккал</span></div>
+      <div class="hw-divider"></div>
+      <div class="hw-calc-row hw-result"><span>Дефицит</span><span style="color:${kgColor2}">${deficit > 0 ? '−' : '+'} ${Math.abs(deficit)} ккал</span></div>
+      <div class="hw-calc-row hw-tempo-row"><span>Темп похудения</span><span style="color:${kgColor2}">${kgDay <= 0 ? '↓' : '↑'} ${Math.abs(kgDay).toFixed(1)} кг/мес</span></div>
+    </div>
+    <div class="hw-kbzhu" style="margin-top:8px">
       <div class="hw-kbzhu-row"><span style="color:var(--kcal)">Ккал</span><span>${h.kcal || 0} / ${targets.kcal}</span><span style="color:var(--muted)">${kPct}%</span></div>
       <div class="hw-kbzhu-row"><span style="color:var(--prot)">Белок</span><span>${h.prot || 0} / ${targets.prot} г</span><span style="color:var(--muted)">${pPct}%</span></div>
       <div class="hw-kbzhu-row"><span>Жиры</span><span>${h.fat || 0} / ${targets.fat} г</span><span style="color:var(--muted)">${fPct}%</span></div>
       <div class="hw-kbzhu-row"><span style="color:var(--balance)">Углев</span><span>${h.carb || 0} / ${targets.carb} г</span><span style="color:var(--muted)">${cPct}%</span></div>
-      ${bmrRow}${actRow}
     </div>
   </div>
 </div>`;
@@ -2381,6 +2412,68 @@ function hwToggleDay(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function fmtNum(n) { return String(n); }
+
+function renderWeeklySummary(closedDays, isCurrent, bmr, targets) {
+  if (!closedDays || !closedDays.length) return '';
+  const pKcal = targets.kcal || 1800;
+  const pProt = targets.prot || 150;
+  const pFat  = targets.fat  || 60;
+  const pCarb = targets.carb || 165;
+  const ref = bmr > 0 ? bmr : pKcal;
+
+  const totalDef = closedDays.reduce((s, h) => {
+    const effKcal = (h.kcal || 0) - (h.actKcal || 0);
+    return s + (ref - effKcal);
+  }, 0);
+  const kgTotal = Math.round(-totalDef / 7700 * 10) / 10;
+  const avgDef  = Math.round(totalDef / closedDays.length);
+  const avgKcal = Math.round(closedDays.reduce((s, h) => s + (h.kcal || 0), 0) / closedDays.length);
+  const avgProt = Math.round(closedDays.reduce((s, h) => s + (h.prot || 0), 0) / closedDays.length);
+  const avgFat  = Math.round(closedDays.reduce((s, h) => s + (h.fat  || 0), 0) / closedDays.length);
+  const avgCarb = Math.round(closedDays.reduce((s, h) => s + (h.carb || 0), 0) / closedDays.length);
+
+  const kgColor  = kgTotal <= 0 ? '#1D9E75' : '#E24B4A';
+  const defColor = avgDef  >  0 ? '#1D9E75' : '#E24B4A';
+  const kgSign   = kgTotal > 0 ? '+' : '';
+  const defSign  = avgDef  > 0 ? '−' : '+';
+
+  const kPct2 = Math.round(avgKcal / pKcal * 100);
+  const pPct2 = Math.round(avgProt / pProt * 100);
+  const fPct2 = Math.round(avgFat  / pFat  * 100);
+  const cPct2 = Math.round(avgCarb / pCarb * 100);
+
+  const title = isCurrent
+    ? `ПРОМЕЖУТОЧНЫЙ ИТОГ · ${closedDays.length} из 7 дней`
+    : 'ИТОГО ЗА НЕДЕЛЮ';
+
+  return `<div class="hw-summary">
+  <div class="hw-summary-title">${title}</div>
+  <div class="hw-summary-top">
+    <div class="hw-sum-item">
+      <div class="hw-sum-val" style="color:${kgColor}">${kgSign}${kgTotal} кг</div>
+      <div class="hw-sum-label">за неделю</div>
+    </div>
+    <div class="hw-sum-item">
+      <div class="hw-sum-val" style="color:${defColor}">${defSign}${Math.abs(avgDef)}</div>
+      <div class="hw-sum-label">ср. дефицит ккал</div>
+    </div>
+    <div class="hw-sum-item">
+      <div class="hw-sum-val">${closedDays.length}</div>
+      <div class="hw-sum-label">дней закрыто</div>
+    </div>
+  </div>
+  <div class="hw-avg-kbju">
+    <div class="hw-avg-title">СРЕДНЕЕ КБЖУ ЗА ДЕНЬ</div>
+    <div class="hw-avg-grid">
+      <div class="hw-avg-item"><span>Калории</span><span>${avgKcal} ккал <span class="hw-pct ${kPct2 > 110 ? 'over' : ''}">${kPct2}%</span></span></div>
+      <div class="hw-avg-item"><span style="color:var(--prot)">Белок</span><span>${avgProt} г <span class="hw-pct ${pPct2 >= 100 ? 'ok' : ''}">${pPct2}%</span></span></div>
+      <div class="hw-avg-item"><span>Жиры</span><span>${avgFat} г <span class="hw-pct">${fPct2}%</span></span></div>
+      <div class="hw-avg-item"><span style="color:var(--balance)">Углеводы</span><span>${avgCarb} г <span class="hw-pct">${cPct2}%</span></span></div>
+    </div>
+  </div>
+</div>`;
 }
 
 // ═══════════════════════════════════════════
@@ -2697,7 +2790,6 @@ function openHelp() {
 
   html += '<h3>📊 График истории</h3>';
   html += '<ul>';
-  html += '<li>Синие столбики — балл питания /100</li>';
   html += '<li>Фиолетовая линия — балл дня /115</li>';
   if (goal === 'loss') {
     html += '<li>Зелёная линия — дефицит (худеем) ✅</li>';
