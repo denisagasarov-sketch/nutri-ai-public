@@ -399,7 +399,7 @@ input::placeholder{color:var(--muted)}
   </section>
 
   <!-- ═══ DAY SCORE ═══ -->
-  <section class="sec" id="sec-day">
+  <section class="sec" id="sec-day" style="display:none">
 
     <!-- Date nav -->
     <div class="card" style="padding:10px 14px;margin-bottom:10px">
@@ -557,6 +557,23 @@ input::placeholder{color:var(--muted)}
         <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('importFileInput').click()">⬆ Импорт</button>
       </div>
       <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+
+    <!-- Display settings -->
+    <div class="card">
+      <div class="card-ttl">Интерфейс</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:0.5px solid rgba(255,255,255,0.06)">
+        <div>
+          <div style="font-size:14px;color:#ccc">Вкладка День</div>
+          <div style="font-size:11px;color:#555;margin-top:2px">Показывать детальный анализ дня</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+          <input type="checkbox" id="toggleDayTab" onchange="setDayTabVisible(this.checked)" style="opacity:0;width:0;height:0">
+          <span id="toggleDayTabSlider" style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:24px;background:#333;transition:0.2s">
+            <span style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;border-radius:50%;background:#fff;transition:0.2s;display:block" id="toggleDayTabThumb"></span>
+          </span>
+        </label>
+      </div>
     </div>
 
     <!-- My Products -->
@@ -800,7 +817,7 @@ input::placeholder{color:var(--muted)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     Сегодня
   </button>
-  <button class="nav-btn" id="nav-day" onclick="goTo('day')">
+  <button class="nav-btn" id="nav-day" onclick="goTo('day')" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     День
   </button>
@@ -821,7 +838,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.32';
+const VERSION = '1.4.33';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -957,6 +974,10 @@ function initApp() {
   updateTotals();
   requestAnimationFrame(() => { renderHistory(); });
   updateDayScoreLabels();
+  const _showDay = localStorage.getItem('showDayTab') === '1';
+  const _dayChk = document.getElementById('toggleDayTab');
+  if (_dayChk) _dayChk.checked = _showDay;
+  setDayTabVisible(_showDay);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 
@@ -1211,6 +1232,18 @@ function goTo(name) {
   if (name === 'history')  onHistoryTabShow();
   if (name === 'day')      renderDayView();
   if (name === 'settings') { renderUserFoodsList(); renderProfileCard(); }
+}
+
+function setDayTabVisible(show) {
+  localStorage.setItem('showDayTab', show ? '1' : '0');
+  const tabBtn = document.getElementById('nav-day');
+  if (tabBtn) tabBtn.style.display = show ? '' : 'none';
+  const tabContent = document.getElementById('sec-day');
+  if (tabContent) tabContent.style.display = show ? '' : 'none';
+  const slider = document.getElementById('toggleDayTabSlider');
+  const thumb  = document.getElementById('toggleDayTabThumb');
+  if (slider) slider.style.background = show ? '#a78bfa' : '#333';
+  if (thumb)  thumb.style.left        = show ? '23px' : '3px';
 }
 
 // ═══════════════════════════════════════════
