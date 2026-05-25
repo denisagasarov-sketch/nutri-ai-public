@@ -851,7 +851,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.45';
+const VERSION = '1.4.46';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -1888,17 +1888,17 @@ function updateTodayScreen() {
   // Блок 5: список продуктов (каждый продукт отдельно, свежее сверху)
   const foodListEl = document.getElementById('todayFoodList');
   if (foodListEl) {
-    const sortedFoods = [...foods].sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+    const sortedFoods = foods.map((f, i) => ({f, i})).sort((a,b) => (b.f.timestamp||0) - (a.f.timestamp||0));
     if (!sortedFoods.length) {
       foodListEl.innerHTML =
         '<div style="font-size:13px;color:#444;padding:10px 0;text-align:center">пока ничего не съедено</div>';
     } else {
-      foodListEl.innerHTML = sortedFoods.map(f => {
+      foodListEl.innerHTML = sortedFoods.map(({f, i}) => {
         const cleanLabel = f.cleanliness === 'junk' ? 'мусор'
           : f.cleanliness === 'snack' ? 'снек' : 'чистое';
         const cleanColor = f.cleanliness === 'clean' ? '#1D9E75' : '#E24B4A';
         const wStr = f.weight ? fmtRu(f.weight, 0) + ' г' : '';
-        return '<div style="display:flex;align-items:center;padding:8px 0;border-bottom:0.5px solid rgba(255,255,255,0.04);gap:8px">' +
+        return '<div style="display:flex;align-items:center;padding:8px 0;border-bottom:0.5px solid rgba(255,255,255,0.04);gap:8px;cursor:pointer" onclick="openWeightEdit(' + i + ')">' +
           '<div style="font-size:11px;color:#333;width:34px;flex-shrink:0;text-align:center">' +
           formatTime(f.timestamp) + '</div>' +
           '<div style="flex:1">' +
@@ -1908,7 +1908,10 @@ function updateTodayScreen() {
           ' · Ж ' + fmtRu(f.fat,1) + ' · У ' + fmtRu(f.carb,1) +
           ' · <span style="color:' + cleanColor + '">' + cleanLabel + '</span></div>' +
           '</div>' +
-          '<div style="font-size:12px;color:#555;flex-shrink:0">' + fmtRu(f.kcal,0) + ' ккал</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' +
+          '<span style="font-size:12px;color:#555">' + fmtRu(f.kcal,0) + ' ккал</span>' +
+          '<button onclick="event.stopPropagation();removeFood(' + i + ')" style="background:none;border:none;color:#333;cursor:pointer;font-size:18px;line-height:1;padding:2px 4px">×</button>' +
+          '</div>' +
           '</div>';
       }).join('');
     }
