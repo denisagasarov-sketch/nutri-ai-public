@@ -452,8 +452,8 @@ input::placeholder{color:var(--muted)}
             <canvas id="scoreChart" role="img" aria-label="График баллов питания, дня и темпа"></canvas>
           </div>
         </div>
-        <div id="chartScrollTrack" style="width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;margin-top:14px;position:relative;cursor:pointer">
-          <div id="chartScrollThumb" style="position:absolute;top:0;left:0;height:6px;border-radius:3px;background:rgba(255,255,255,0.4);transition:opacity 0.2s"></div>
+        <div id="chartScrollTrack" style="width:100%;height:10px;background:rgba(255,255,255,0.08);border-radius:5px;margin-top:24px;position:relative;cursor:pointer">
+          <div id="chartScrollThumb" style="position:absolute;top:0;left:0;height:10px;border-radius:5px;background:rgba(255,255,255,0.4);transition:opacity 0.2s"></div>
         </div>
       </div>
     </div>
@@ -797,7 +797,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.13';
+const VERSION = '1.4.14';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -2098,11 +2098,11 @@ function renderChart() {
           borderWidth: 1, borderRadius: 3, order: 3, yAxisID: 'y2' },
         { label: 'Питание', data: питание, type: 'line',
           borderColor: '#185FA5', backgroundColor: 'transparent',
-          borderWidth: 2.5, pointBackgroundColor: '#185FA5',
+          borderWidth: 4, pointBackgroundColor: '#185FA5',
           pointRadius: 3, pointHoverRadius: 5, tension: 0.4, order: 1, yAxisID: 'y' },
         { label: 'День', data: день, type: 'line',
           borderColor: '#a78bfa', backgroundColor: 'transparent',
-          borderWidth: 2.5, pointBackgroundColor: '#a78bfa',
+          borderWidth: 4, pointBackgroundColor: '#a78bfa',
           pointRadius: 3, pointHoverRadius: 5, tension: 0.4, order: 2, yAxisID: 'y' }
       ]
     },
