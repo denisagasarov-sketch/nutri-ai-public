@@ -787,7 +787,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.25';
+const VERSION = '1.4.26';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -1383,7 +1383,7 @@ function renderFoods() {
     <div class="food-item" onclick="openWeightEdit(${i})" style="cursor:pointer">
       <div class="fi-left">
         <div class="fi-name">${esc(displayName)}${wSpan}<span class="badge ${f.cleanliness||'clean'}">${clLbl(f.cleanliness)}</span></div>
-        <div class="fi-macros">Б${f.prot} · Ж${f.fat} · У${f.carb}</div>
+        <div class="fi-macros">Б${fmtRu(f.prot)} · Ж${fmtRu(f.fat)} · У${fmtRu(f.carb)}</div>
       </div>
       <div class="fi-right">
         <div class="fi-kcal">${f.kcal}</div>
@@ -1847,9 +1847,9 @@ function renderDayView() {
   if (!hasData) {
     paceEl.innerHTML = '<span style="color:var(--muted)">Добавьте продукты для расчёта</span>';
   } else if (pace < 0) {
-    paceEl.innerHTML = `<span style="color:var(--clean)">Похудение: ${Math.abs(pace).toFixed(1)} кг/мес</span>`;
+    paceEl.innerHTML = `<span style="color:var(--clean)">Похудение: ${fmtRu(Math.abs(pace))} кг/мес</span>`;
   } else if (pace > 0) {
-    paceEl.innerHTML = `<span style="color:var(--kcal)">Набор: +${pace.toFixed(1)} кг/мес ⚠️</span>`;
+    paceEl.innerHTML = `<span style="color:var(--kcal)">Набор: +${fmtRu(pace)} кг/мес ⚠️</span>`;
   } else {
     paceEl.innerHTML = `<span style="color:var(--muted)">Баланс</span>`;
   }
@@ -1978,7 +1978,7 @@ const kgLabelPlugin = {
       const val = dataset.data[i];
       if (val === null || val === undefined) return;
       if (Math.abs(val) < 0.05) return;
-      const label = (val > 0 ? '+' : '') + val.toFixed(1);
+      const label = (val > 0 ? '+' : '') + fmtRu(val);
       ctx.save();
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
@@ -2103,7 +2103,7 @@ function renderChart() {
       const idx = Math.max(0, Math.min(labels.length - 1, Math.floor(x / perDay)));
       const kgVal = темп[idx];
       const color = bc(kgVal);
-      const kgStr = (kgVal <= 0 ? '↓ ' : '↑ +') + Math.abs(kgVal).toFixed(1) + ' кг/мес';
+      const kgStr = (kgVal <= 0 ? '↓ ' : '↑ +') + fmtRu(Math.abs(kgVal)) + ' кг/мес';
       tipTitle.textContent = labels[idx];
       tipDay_.textContent = 'День: ' + день[idx] + ' пт';
       tipTemp.textContent = 'Темп: ' + kgStr;
@@ -2287,7 +2287,7 @@ function renderHistoryWeek(monKey, items, bmr, targets) {
     return s + (bmr > 0 ? bmr - effKcal : (targets.kcal - effKcal));
   }, 0);
   const kgEst = Math.round(-totalDeficit / 7700 * 10) / 10;
-  const kgStr = (kgEst > 0 ? '+' : '') + kgEst.toFixed(1);
+  const kgStr = (kgEst > 0 ? '+' : '') + fmtRu(kgEst);
   const kgColor = kgEst <= 0 ? 'var(--clean)' : 'var(--kcal)';
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const monDate = new Date(monKey);
@@ -2336,7 +2336,7 @@ function renderHistoryDayRow(h, idx, bmr, targets) {
     <div style="flex:1">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:13px;color:#ccc;font-weight:500">${fmtNum(h.kcal||0)} ккал</span>
-        <span style="font-size:13px;font-weight:700;color:${kgColor}">${kgDay<=0?'↓':'↑'}${Math.abs(kgDay).toFixed(1)} кг/мес</span>
+        <span style="font-size:13px;font-weight:700;color:${kgColor}">${kgDay<=0?'↓':'↑'}${fmtRu(Math.abs(kgDay))} кг/мес</span>
       </div>
       <div style="font-size:11px;margin-top:3px">
         <span style="color:${kgColor}">${defLabel} ${defSign}${defAbs} ккал</span>
@@ -2353,7 +2353,7 @@ function renderHistoryDayRow(h, idx, bmr, targets) {
       <div class="hw-calc-row"><span>Базовый расход (BMR)</span><span style="color:#888">${Math.round(bmr)} ккал</span></div>
       <div class="hw-divider"></div>
       <div class="hw-calc-row hw-result"><span>Дефицит</span><span style="color:${kgColor2}">${deficit > 0 ? '−' : '+'} ${Math.abs(deficit)} ккал</span></div>
-      <div class="hw-calc-row hw-tempo-row"><span>Темп похудения</span><span style="color:${kgColor2}">${kgDay <= 0 ? '↓' : '↑'} ${Math.abs(kgDay).toFixed(1)} кг/мес</span></div>
+      <div class="hw-calc-row hw-tempo-row"><span>Темп похудения</span><span style="color:${kgColor2}">${kgDay <= 0 ? '↓' : '↑'} ${fmtRu(Math.abs(kgDay))} кг/мес</span></div>
     </div>
     <div class="hw-kbzhu" style="margin-top:8px">
       <div class="hw-kbzhu-row"><span style="color:var(--kcal)">Ккал</span><span>${h.kcal || 0} / ${targets.kcal}</span><span style="color:var(--muted)">${kPct}%</span></div>
@@ -2371,6 +2371,12 @@ function hwToggleDay(id) {
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 function fmtNum(n) { return String(n); }
+
+function fmtRu(n, decimals) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const d = decimals !== undefined ? decimals : 1;
+  return Number(n).toFixed(d).replace('.', ',');
+}
 
 function renderWeeklySummary(closedDays, isCurrent, bmr, targets) {
   if (!closedDays || !closedDays.length) return '';
@@ -2409,7 +2415,7 @@ function renderWeeklySummary(closedDays, isCurrent, bmr, targets) {
   <div class="hw-summary-title">${title}</div>
   <div class="hw-summary-top">
     <div class="hw-sum-item">
-      <div class="hw-sum-val" style="color:${kgColor}">${kgSign}${kgTotal} кг</div>
+      <div class="hw-sum-val" style="color:${kgColor}">${kgSign}${fmtRu(Math.abs(kgTotal))} кг</div>
       <div class="hw-sum-label">за неделю</div>
     </div>
     <div class="hw-sum-item">
@@ -2518,7 +2524,7 @@ function renderDayEditFoodList() {
       <div class="food-item" onclick="dayEditOpenWeight(${i})" style="cursor:pointer">
         <div class="fi-left">
           <div class="fi-name">${esc(displayName)}${wSpan}</div>
-          <div class="fi-macros">Б${f.prot}·Ж${f.fat}·У${f.carb}</div>
+          <div class="fi-macros">Б${fmtRu(f.prot)}·Ж${fmtRu(f.fat)}·У${fmtRu(f.carb)}</div>
         </div>
         <div class="fi-right">
           <span class="fi-kcal">${f.kcal}</span>
