@@ -583,7 +583,7 @@ input::placeholder{color:var(--muted)}
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="card-ttl" style="margin-bottom:0">Мои продукты</div>
-        <button class="btn-icon" onclick="openUserFoodModal(null)" title="Добавить продукт" style="font-size:20px;line-height:1">+</button>
+        <button class="btn-icon" onclick="openMyProductModal(null)" title="Добавить продукт" style="font-size:20px;line-height:1">+</button>
       </div>
       <div id="userFoodsList"></div>
     </div>
@@ -682,40 +682,36 @@ input::placeholder{color:var(--muted)}
 <div id="userFoodModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeUserFoodModal()">
   <div class="modal-box">
     <div class="modal-hdr">
-      <span id="ufModalTitle">Продукт</span>
+      <span>Мой продукт</span>
       <button class="modal-close" onclick="closeUserFoodModal()">×</button>
     </div>
-    <div class="modal-field" style="margin-bottom:10px">
-      <label>Название</label>
-      <input type="text" id="ufName" placeholder="Название продукта">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="myProductName" placeholder="курица тандыр"
+        style="flex:1;background:rgba(255,255,255,0.06);border:none;border-radius:8px;padding:10px 12px;color:#fff;font-size:13px;outline:none">
+      <button onclick="onLookupProduct()"
+        id="myProductLookupBtn"
+        style="padding:10px 14px;border-radius:8px;background:rgba(167,139,250,0.2);border:none;color:#a78bfa;font-size:12px;cursor:pointer;white-space:nowrap">
+        Найти
+      </button>
     </div>
-    <div class="modal-field" style="margin-bottom:10px">
-      <label>Алиасы</label>
-      <input type="text" id="ufAliases" placeholder="через запятую: арах паста, арахпаста">
-    </div>
-    <div class="modal-field" style="margin-bottom:10px">
-      <label>Количество (г или мл)</label>
-      <input type="number" id="ufQty" min="1" max="9999" placeholder="например 100, 325, 30" oninput="ufRecalc()">
-    </div>
-    <div class="modal-grid" style="margin-bottom:6px">
-      <div class="modal-field">
-        <label>Ккал</label>
-        <input type="number" id="ufKcal" min="0" max="99999" step="0.1" oninput="ufRecalc()">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+      <div>
+        <div style="font-size:10px;color:#555;margin-bottom:3px">Ккал</div>
+        <input id="myProductKcal" type="number" style="width:100%;background:rgba(255,255,255,0.06);border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;outline:none;text-align:center">
       </div>
-      <div class="modal-field">
-        <label>Белок</label>
-        <input type="number" id="ufProt" min="0" max="9999" step="0.1" oninput="ufRecalc()">
+      <div>
+        <div style="font-size:10px;color:#555;margin-bottom:3px">Белок</div>
+        <input id="myProductProt" type="number" style="width:100%;background:rgba(255,255,255,0.06);border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;outline:none;text-align:center">
       </div>
-      <div class="modal-field">
-        <label>Жиры</label>
-        <input type="number" id="ufFat" min="0" max="9999" step="0.1" oninput="ufRecalc()">
+      <div>
+        <div style="font-size:10px;color:#555;margin-bottom:3px">Жиры</div>
+        <input id="myProductFat" type="number" style="width:100%;background:rgba(255,255,255,0.06);border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;outline:none;text-align:center">
       </div>
-      <div class="modal-field">
-        <label>Углев</label>
-        <input type="number" id="ufCarb" min="0" max="9999" step="0.1" oninput="ufRecalc()">
+      <div>
+        <div style="font-size:10px;color:#555;margin-bottom:3px">Углев</div>
+        <input id="myProductCarb" type="number" style="width:100%;background:rgba(255,255,255,0.06);border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;outline:none;text-align:center">
       </div>
     </div>
-    <div id="ufPer100" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
     <div style="margin-bottom:14px">
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Тип</div>
       <div style="display:flex;gap:8px">
@@ -723,10 +719,10 @@ input::placeholder{color:var(--muted)}
         <button class="uf-type-btn" id="ufTypeSnack" onclick="setUfType('snack')">Снек</button>
       </div>
     </div>
-    <div class="row" style="gap:8px">
-      <button class="btn btn-ghost" style="flex:1" onclick="closeUserFoodModal()">Отмена</button>
-      <button class="btn" style="flex:1" onclick="saveUserFood()">Сохранить</button>
-    </div>
+    <button onclick="saveMyProduct()"
+      style="width:100%;padding:10px;border-radius:8px;background:rgba(29,158,117,0.15);border:none;color:#1D9E75;font-size:13px;cursor:pointer">
+      Сохранить продукт
+    </button>
   </div>
 </div>
 
@@ -841,7 +837,7 @@ input::placeholder{color:var(--muted)}
 //  CONSTANTS
 // ═══════════════════════════════════════════
 const _dk = atob('c2stcHJvai1KY2VEU0hjLW0wSlR1WUVPckZ2WFN6bW14SUYydE1yS1BnUFdySHBsV1dWXzB6Nm1TQmF6Q0lPTUdUZkUzeTQ0aUpXQ2V6WVpwVFQzQmxia0ZKS3J4M3FnaUhlaE9FYW90cUFXRUV5d1pfZlhidjBNM0FYQTJrQ1VIU3RBTXNGQmZoTFlQaDVkbFlzSHNYNkRucE90WnRqLXRFZ0E=');
-const VERSION = '1.4.35';
+const VERSION = '1.4.36';
 let G = { kcal:1800, prot:150, fat:60, carb:165 };
 
 const DEFAULT_PROFILE = {
@@ -892,21 +888,6 @@ function calcTargets(profile) {
 }
 
 const SYS_PROMPT = `Ты помощник по подсчёту КБЖУ. Отвечай ТОЛЬКО валидным JSON без markdown.
-
-ИЗВЕСТНЫЕ ПРОДУКТЫ — если пользователь имеет в виду один из них, используй его КБЖУ и каноническое имя точно как написано:
-- Овсянка (алиасы: овсяная каша, овёс, oatmeal): 373 ккал/100г, Б12 Ж7 У64
-- Молоко Meiji (алиасы: молоко, молоко мейджи, meiji): 70 ккал/100мл, Б3 Ж4 У5
-- Протеин Prostar Whey (алиасы: протеин, прот, whey, вей, простар, protein): порция 30г → 120 ккал, Б25 Ж1 У2
-- Казеин (алиасы: casein, казеин на ночь): порция 30г → 110 ккал, Б24 Ж1 У2
-- Курица тандыр (алиасы: курица, кура, куриная грудка, грудка, курочка, chicken): 165 ккал/100г, Б31 Ж3.5 У0
-- Арахис Koh-Kae (алиасы: арахис, koh kae, арахис пачка): пачка = 540 ккал, Б18 Ж39 У3 (weight=135)
-- Рис варёный (алиасы: рис, rice, рис отварной): 130 ккал/100г, Б2.7 Ж0.3 У28
-- Оливковое масло (алиасы: масло, olive oil, масло оливковое): 900 ккал/100г, Б0 Ж100 У0
-- Какао Van Houten (алиасы: какао, cocoa, ван хаутен): 471 ккал/100г, Б18.5 Ж23.4 У46.7
-- Кокосовый сахар (алиасы: кокос сахар, coconut sugar): 380 ккал/100г, Б0 Ж0 У95
-- Сгущёнка (алиасы: сгущённое молоко, сгущенка): 330 ккал/100г, Б8 Ж8 У56
-- Рисовые крекеры Thong Ampai (алиасы: рисовые крекеры, крекеры рисовые): 500 ккал/100г, Б8 Ж14 У75
-- Арахисовая паста (алиасы: арахисовая паста, арах паста, арахпаста, peanut butter): 533 ккал/100г, Б26.7 Ж26.7 У40, cleanliness=snack
 
 Если вес не указан — используй 100г (для протеина/казеина — 30г).
 Верни JSON: {"name":"каноническое название","kcal":число,"prot":число,"fat":число,"carb":число,"weight":число,"cleanliness":"clean"|"snack"|"junk"}
@@ -1464,14 +1445,13 @@ function clLbl(c) { return c==='junk'?'мусор':c==='snack'?'снек':'чи�
 // ═══════════════════════════════════════════
 //  MY PRODUCTS (userFoods)
 // ═══════════════════════════════════════════
-let _ufEditIdx = null;
 
 function renderUserFoodsList() {
   const el = document.getElementById('userFoodsList');
   if (!el) return;
   const uFoods = lsGet('userFoods', []);
   if (!uFoods.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">Продукты появятся здесь после добавления через фото или текст</div>';
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">Нет сохранённых продуктов</div>';
     return;
   }
   el.innerHTML = uFoods.map((f, i) => `
@@ -1481,40 +1461,65 @@ function renderUserFoodsList() {
         <div class="uf-sub">${f.kcal} ккал/100г · Б${f.prot} · Ж${f.fat} · У${f.carb} · <span class="badge ${f.cleanliness||'clean'}">${clLbl(f.cleanliness)}</span></div>
       </div>
       <div class="uf-actions">
-        <button class="uf-act-btn" onclick="openUserFoodModal(${i})">✏️</button>
+        <button class="uf-act-btn" onclick="openMyProductModal(${i})">✏️</button>
         <button class="uf-act-btn" onclick="deleteUserFood(${i})">🗑️</button>
       </div>
     </div>
   `).join('');
 }
 
-function openUserFoodModal(idx) {
-  _ufEditIdx = idx;
+function openMyProductModal(idx) {
   const uFoods = lsGet('userFoods', []);
-  const f = idx !== null ? uFoods[idx] : null;
-  document.getElementById('ufModalTitle').textContent = f ? 'Редактировать продукт' : 'Новый продукт';
-  document.getElementById('ufName').value    = f ? f.name : '';
-  document.getElementById('ufAliases').value = f ? (f.aliases||[]).join(', ') : '';
-  document.getElementById('ufQty').value     = 100;
-  document.getElementById('ufKcal').value    = f ? f.kcal : '';
-  document.getElementById('ufProt').value    = f ? f.prot : '';
-  document.getElementById('ufFat').value     = f ? f.fat  : '';
-  document.getElementById('ufCarb').value    = f ? f.carb : '';
-  document.getElementById('ufPer100').textContent = '';
-  setUfType(f ? (f.cleanliness||'clean') : 'clean');
+  const f = (idx !== null && idx >= 0) ? uFoods[idx] : null;
+  document.getElementById('myProductName').value  = f ? f.name : '';
+  document.getElementById('myProductKcal').value  = f ? f.kcal : '';
+  document.getElementById('myProductProt').value  = f ? f.prot : '';
+  document.getElementById('myProductFat').value   = f ? f.fat  : '';
+  document.getElementById('myProductCarb').value  = f ? f.carb : '';
+  document.getElementById('myProductLookupBtn').textContent = 'Найти';
+  setUfType(f ? (f.cleanliness || 'clean') : 'clean');
   document.getElementById('userFoodModal').style.display = 'flex';
 }
 
-function ufRecalc() {
-  const qty  = parseFloat(document.getElementById('ufQty').value)  || 0;
-  const kcal = parseFloat(document.getElementById('ufKcal').value) || 0;
-  const prot = parseFloat(document.getElementById('ufProt').value) || 0;
-  const fat  = parseFloat(document.getElementById('ufFat').value)  || 0;
-  const carb = parseFloat(document.getElementById('ufCarb').value) || 0;
-  const el   = document.getElementById('ufPer100');
-  if (!qty || qty === 100) { el.textContent = ''; return; }
-  const f = 100 / qty;
-  el.textContent = `На 100г: ${Math.round(kcal*f*10)/10} ккал · Б${Math.round(prot*f*10)/10} · Ж${Math.round(fat*f*10)/10} · У${Math.round(carb*f*10)/10}`;
+async function lookupProductGPT(name) {
+  const key = localStorage.getItem('okey');
+  if (!key) { toast('Добавьте API ключ в Настройках'); return null; }
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      temperature: 0.1,
+      max_tokens: 200,
+      messages: [{ role: 'user', content:
+        `Найди КБЖУ для продукта "${name}" на 100г.\nОтвечай ТОЛЬКО JSON без пояснений:\n{"name":"...","kcal":0,"prot":0,"fat":0,"carb":0}\nЧисла округли до 1 знака после запятой.` }]
+    })
+  });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  const raw = data.choices[0].message.content.trim().replace(/^```[a-z]*\n?/,'').replace(/```$/,'').trim();
+  return JSON.parse(raw);
+}
+
+async function onLookupProduct() {
+  const name = document.getElementById('myProductName').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('myProductLookupBtn');
+  btn.textContent = '…';
+  btn.disabled = true;
+  try {
+    const product = await lookupProductGPT(name);
+    if (!product) { btn.textContent = 'Найти'; btn.disabled = false; return; }
+    document.getElementById('myProductName').value = product.name || name;
+    document.getElementById('myProductKcal').value = product.kcal || '';
+    document.getElementById('myProductProt').value = product.prot || '';
+    document.getElementById('myProductFat').value  = product.fat  || '';
+    document.getElementById('myProductCarb').value = product.carb || '';
+    btn.textContent = '✓ Найдено';
+  } catch(e) {
+    btn.textContent = 'Ошибка';
+  }
+  btn.disabled = false;
 }
 
 function closeUserFoodModal() {
@@ -1527,32 +1532,28 @@ function setUfType(type) {
   document.getElementById('userFoodModal').dataset.type = type;
 }
 
-function saveUserFood() {
-  const name = document.getElementById('ufName').value.trim();
+function saveMyProduct() {
+  const name = document.getElementById('myProductName').value.trim();
   if (!name) { toast('Введи название'); return; }
-  const aliasRaw = document.getElementById('ufAliases').value.trim();
-  const aliases  = aliasRaw ? aliasRaw.split(',').map(a => a.trim().toLowerCase()).filter(Boolean) : [name.toLowerCase()];
-  const qty     = parseFloat(document.getElementById('ufQty').value)  || 100;
-  const kcalRaw = parseFloat(document.getElementById('ufKcal').value) || 0;
-  const protRaw = parseFloat(document.getElementById('ufProt').value) || 0;
-  const fatRaw  = parseFloat(document.getElementById('ufFat').value)  || 0;
-  const carbRaw = parseFloat(document.getElementById('ufCarb').value) || 0;
-  const factor = 100 / qty;
-  const kcal = Math.round(kcalRaw * factor * 10) / 10;
-  const prot = Math.round(protRaw * factor * 10) / 10;
-  const fat  = Math.round(fatRaw  * factor * 10) / 10;
-  const carb = Math.round(carbRaw * factor * 10) / 10;
-  const cleanliness = document.getElementById('userFoodModal').dataset.type || 'clean';
-  const entry = { name, aliases, kcal, prot, fat, carb, cleanliness, savedAt: new Date().toISOString() };
+  const product = {
+    name,
+    kcal: parseFloat(document.getElementById('myProductKcal').value) || 0,
+    prot: parseFloat(document.getElementById('myProductProt').value) || 0,
+    fat:  parseFloat(document.getElementById('myProductFat').value)  || 0,
+    carb: parseFloat(document.getElementById('myProductCarb').value) || 0,
+    cleanliness: document.getElementById('userFoodModal').dataset.type || 'clean',
+    savedAt: new Date().toISOString()
+  };
   const uFoods = lsGet('userFoods', []);
-  if (_ufEditIdx !== null && _ufEditIdx >= 0) {
-    uFoods[_ufEditIdx] = entry;
-  } else {
-    uFoods.push(entry);
-  }
+  const idx = uFoods.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  if (idx >= 0) uFoods[idx] = product; else uFoods.push(product);
   lsSave('userFoods', uFoods);
-  renderUserFoodsList();
+  ['myProductName','myProductKcal','myProductProt','myProductFat','myProductCarb'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('myProductLookupBtn').textContent = 'Найти';
   closeUserFoodModal();
+  renderUserFoodsList();
   toast('✅ Продукт сохранён');
 }
 
